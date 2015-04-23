@@ -59,7 +59,11 @@
                      if (d.index === undefined) {
                          d.index = i;
                          return i;
-                     } else return d.index;
+                     } else {
+                         if (typeof (d.index) === "string")
+                             d.index = Number(d.index);
+                         return d.index;
+                     }
                  } else {
                      this._xColumnType = "number";
                      d[this._columns.x] = Number(d[this._columns.x]);
@@ -89,7 +93,11 @@
                      if (d.index === undefined) {
                          d.index = i;
                          return i;
-                     } else return d.index;
+                     } else {
+                         if (typeof (d.index) === "string")
+                             d.index = Number(d.index);
+                         return d.index;
+                     }
                  } else {
                      this._yColumnType = "number";
                      d[this._columns.y] = Number(d[this._columns.y]);
