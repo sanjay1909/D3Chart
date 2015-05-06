@@ -3,42 +3,27 @@
 
  (function () {
      function Scatterplot(config) {
-         this.config = config;
+         _config = config;
          if (config.container) {
-             this._container = "#" + config.container;
+             _container = "#" + config.container;
          } else {
-             this._container = "body";
+             _container = "body";
          }
-         this.interactions = config.interactions;
-         this._columns = config.columns;
-         margin = config.margin;
-         this._data = config.data;
-         size = config.size;
-
-
-         this._quadTree;
-         this._brush;
-         this._svg;
-         this._kdRect;
-         this._xValue;
-         this._xScale;
-         this._xMap;
-         this._xAxis;
-         this._yValue;
-         this._yScale;
-         this._yMap;
-         this._yAxis;
-         this._cValue;
-         this._point;
-         this._xColumnType;
-         this._yColumnType;
 
          initializeChart.call(this);
-         if (this._data)
-             this.renderChart(this._data);
+         if (_config.data)
+             this.renderChart(_config.data);
      }
 
-     var size, margin;
+     var _container, _config;
+     var _quadTree, _brush, _kdRect;
+     var _xColumnType, _yColumnType;
+
+     var _svg, _point;
+     var _xValue, _yValue, _cValue;
+     var _xScale, _yScale;
+     var _xMap, _yMap;
+     var _xAxis, _yAxis;
 
 
      var p = Scatterplot.prototype;
@@ -52,10 +37,10 @@
      function initializeChart() {
          var chart = this;
          // setup x
-         this._xValue = function (d, i) {
-             if (typeof (d[this._columns.x]) === "string") {
-                 if (isNaN(Number(d[this._columns.x]))) {
-                     this._xColumnType = "string";
+         _xValue = function (d, i) {
+             if (typeof (d[_config.columns.x]) === "string") {
+                 if (isNaN(Number(d[_config.columns.x]))) {
+                     _xColumnType = "string";
                      if (d.index === undefined) {
                          d.index = i;
                          return i;
@@ -65,31 +50,31 @@
                          return d.index;
                      }
                  } else {
-                     this._xColumnType = "number";
-                     d[this._columns.x] = Number(d[this._columns.x]);
+                     _xColumnType = "number";
+                     d[_config.columns.x] = Number(d[_config.columns.x]);
                  }
 
              }
-             return d[this._columns.x];
+             return d[_config.columns.x];
          }; // data -> value
-         this._xScale = d3.scale.linear()
-             .range([0, size.width]); // value -> display
+         _xScale = d3.scale.linear()
+             .range([0, _config.size.width]); // value -> display
 
-         this._xMap = function (d, i) {
-             return this._xScale(this._xValue(d, i));
+         _xMap = function (d, i) {
+             return _xScale(_xValue.apply(this, [d, i]));
          }; // data -> display
 
-         this._xAxis = d3.svg.axis()
-             .scale(this._xScale)
+         _xAxis = d3.svg.axis()
+             .scale(_xScale)
              .orient("bottom");
 
 
 
          // setup y
-         this._yValue = function (d) {
-             if (typeof (d[this._columns.y]) === "string") {
-                 if (isNaN(Number(d[this._columns.y]))) {
-                     this._yColumnType = "string";
+         _yValue = function (d) {
+             if (typeof (d[_config.columns.y]) === "string") {
+                 if (isNaN(Number(d[_config.columns.y]))) {
+                     _yColumnType = "string";
                      if (d.index === undefined) {
                          d.index = i;
                          return i;
@@ -99,99 +84,99 @@
                          return d.index;
                      }
                  } else {
-                     this._yColumnType = "number";
-                     d[this._columns.y] = Number(d[this._columns.y]);
+                     _yColumnType = "number";
+                     d[_config.columns.y] = Number(d[_config.columns.y]);
                  }
              }
-             return d[this._columns.y];
+             return d[_config.columns.y];
          }; // data -> value
-         this._yScale = d3.scale.linear()
-             .range([size.height, 0]); // value -> display
-         this._yMap = function (d, i) {
-             return this._yScale(this._yValue(d, i));
+         _yScale = d3.scale.linear()
+             .range([_config.size.height, 0]); // value -> display
+         _yMap = function (d, i) {
+             return _yScale(_yValue.apply(this, [d, i]));
          }; // data -> display
-         this._yAxis = d3.svg.axis()
-             .scale(this._yScale)
+         _yAxis = d3.svg.axis()
+             .scale(_yScale)
              .orient("left");
 
 
 
          // setup fill color
-         this._cValue = function (d) {
-             return d[this._columns.color];
+         _cValue = function (d) {
+             return d[_config.columns.color];
          };
 
          // add the graph canvas to the mentioned of the webpage
-         this._svg = d3.select(this._container).append("svg")
-             .attr("width", size.width + margin.left + margin.right)
-             .attr("height", size.height + margin.top + margin.bottom)
+         _svg = d3.select(_container).append("svg")
+             .attr("width", _config.size.width + _config.margin.left + _config.margin.right)
+             .attr("height", _config.size.height + _config.margin.top + _config.margin.bottom)
              .append("g")
-             .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+             .attr("transform", "translate(" + _config.margin.left + "," + _config.margin.top + ")")
              .on("mousemove", function (d) {
                  var xy = d3.mouse(d3.select(this)[0][0]);
-                 chart._svg.selectAll(chart._container + "pt")
+                 _svg.selectAll(_container + "pt")
                      .attr("cx", xy[0])
                      .attr("cy", xy[1]);
-                 chart._mousemove.call(chart);
+                 _mousemove.call(chart);
              });
 
          /*kdColor = d3.scale.linear()
              .domain([0, 8]) // max depth of quadtree
              .range(["#efe", "#060"]);*/
 
-         this._brush = d3.svg.brush()
-             .x(d3.scale.identity().domain([0 - 5, size.width + 5]))
-             .y(d3.scale.identity().domain([0 - 5, size.height + 5]))
+         _brush = d3.svg.brush()
+             .x(d3.scale.identity().domain([0 - 5, _config.size.width + 5]))
+             .y(d3.scale.identity().domain([0 - 5, _config.size.height + 5]))
              .on("brush", this._brushed.bind(this));
      }
 
 
 
      p.setXAttribute = function (xColumn) {
-         this._columns.x = xColumn;
+         _config.columns.x = xColumn;
          updateXaxis.call(this);
 
      }
 
      p.setYAttribute = function (yColumn) {
-         this._columns.y = yColumn;
+         _config.columns.y = yColumn;
          updateYaxis.call(this);
 
      }
 
-     // [d3.min(this._data, this._xValue.bind(this)) - 1, d3.max(this._data, this._xValue.bind(this)) + 1]
+     // [d3.min(_config.data, _xValue.bind(this)) - 1, d3.max(_config.data, _xValue.bind(this)) + 1]
      p.renderChart = function (data) {
          if (data)
-             this._data = data;
-         if (!this._data) {
+             _config.data = data;
+         if (!_config.data) {
              console.log('Data not found');
              return;
          }
 
-         this._xScale.domain([d3.min(this._data, this._xValue.bind(this)), d3.max(this._data, this._xValue.bind(this))]);
-         this._yScale.domain([d3.min(this._data, this._yValue.bind(this)), d3.max(this._data, this._yValue.bind(this))]);
+         _xScale.domain([d3.min(_config.data, _xValue.bind(this)), d3.max(_config.data, _xValue.bind(this))]);
+         _yScale.domain([d3.min(_config.data, _yValue.bind(this)), d3.max(_config.data, _yValue.bind(this))]);
 
-         this._quadTree = d3.geom.quadtree()
-             .extent([[0, 0], [size.width, size.height]])
-             .x(this._xMap.bind(this))
-             .y(this._yMap.bind(this))
-             (this._data);
+         _quadTree = d3.geom.quadtree()
+             .extent([[0, 0], [_config.size.width, _config.size.height]])
+             .x(_xMap.bind(this))
+             .y(_yMap.bind(this))
+             (_config.data);
 
-         this._xAxis.ticks(this._data.length);
+         _xAxis.ticks(_config.data.length);
 
-         if (this._xColumnType === "string") {
-             this._xAxis.tickFormat(function (i) {
-                 var labels = this._data.map(function (d, i) {
-                     return d[this._columns.x];
+         if (_xColumnType === "string") {
+             _xAxis.tickFormat(function (i) {
+                 var labels = _config.data.map(function (d, i) {
+                     return d[_config.columns.x];
                  }.bind(this));
                  return labels[i];
              }.bind(this));
          }
          // x-axis
-         this._svg.append("g")
+         _svg.append("g")
              .attr("class", "x axis")
-             .attr("transform", "translate(0," + size.height + ")")
-             .call(this._xAxis)
+             .attr("transform", "translate(0," + _config.size.height + ")")
+             .call(_xAxis)
              .selectAll("text")
              .style("text-anchor", "end")
              .attr("dx", "-.8em")
@@ -200,30 +185,30 @@
                  return "rotate(-45)"
              });
 
-         if (this._yColumnType === "string") {
-             this._yAxis.tickFormat(function (i) {
-                 var labels = this._data.map(function (d, i) {
-                     return d[this._columns.y];
+         if (_yColumnType === "string") {
+             _yAxis.tickFormat(function (i) {
+                 var labels = _config.data.map(function (d, i) {
+                     return d[_config.columns.y];
                  }.bind(this));
                  return labels[i];
              }.bind(this));
          }
 
          // y-axis
-         this._svg.append("g")
+         _svg.append("g")
              .attr("class", "y axis")
-             .call(this._yAxis)
+             .call(_yAxis)
              .append("text")
              .attr("transform", "rotate(-90)")
-             .attr("y", 0 - margin.left)
-             .attr("x", 0 - size.height / 2)
+             .attr("y", 0 - _config.margin.left)
+             .attr("x", 0 - _config.size.height / 2)
              .attr("dy", "1em")
              .style("text-anchor", "middle")
-             .text(this._columns.y);
+             .text(_config.columns.y);
 
 
-         this._kdRect = this._svg.selectAll(".node")
-             .data(this.nodes(this._quadTree))
+         _kdRect = _svg.selectAll(".node")
+             .data(this.nodes(_quadTree))
              .enter().append("rect")
              .attr("class", "node")
              .attr("x", function (d) {
@@ -240,49 +225,49 @@
              });
 
          // draw dots
-         this._point = this._svg.selectAll(".point")
-             .data(this._data)
+         _point = _svg.selectAll(".point")
+             .data(_config.data)
              .enter().append("circle")
              .attr("class", "point")
              .attr("r", 6)
-             .attr("cx", this._xMap.bind(this))
-             .attr("cy", this._yMap.bind(this));
+             .attr("cx", _xMap.bind(this))
+             .attr("cy", _yMap.bind(this));
 
-         this._svg.append("circle")
-             .attr("id", this.config.container + "pt")
+         _svg.append("circle")
+             .attr("id", _config.container + "pt")
              .attr("r", 6)
              .style("fill", "none");
 
-         this._svg.append("g")
+         _svg.append("g")
              .attr("class", "brush")
-             .call(this._brush);
+             .call(_brush);
      }
 
      function updateXaxis() {
-         this._xScale.domain([d3.min(this._data, this._xValue.bind(this)), d3.max(this._data, this._xValue.bind(this))]);
+         _xScale.domain([d3.min(_config.data, _xValue.bind(this)), d3.max(_config.data, _xValue.bind(this))]);
 
-         var container = d3.select(this._container).transition();
+         var container = d3.select(_container).transition();
 
          container.selectAll(".point")
              .duration(750)
-             .attr("cx", this._xMap.bind(this));
+             .attr("cx", _xMap.bind(this));
 
          container.select(".x.axis") // change the x axis
              .duration(750)
-             .call(this._xAxis);
+             .call(_xAxis);
      }
 
      function updateYaxis() {
-         this._yScale.domain([d3.min(this._data, this._yValue.bind(this)), d3.max(this._data, this._yValue.bind(this))]);
-         var container = d3.select(this._container).transition();
+         _yScale.domain([d3.min(_config.data, _yValue.bind(this)), d3.max(_config.data, _yValue.bind(this))]);
+         var container = d3.select(_container).transition();
 
          container.selectAll(".point")
              .duration(750)
-             .attr("cy", this._yMap.bind(this));
+             .attr("cy", _yMap.bind(this));
 
          container.select(".y.axis") // change the y axis
              .duration(750)
-             .call(this._yAxis);
+             .call(_yAxis);
      }
 
 
@@ -315,11 +300,11 @@
              var p = node.point;
              if (p) {
                  p.scanned = true;
-                 var colXVal = this._xScale(this._xValue(p), p.index);
-                 var colYVal = this._yScale(this._yValue(p), p.index);
+                 var colXVal = _xScale(_xValue.apply(this, [p]), p.index);
+                 var colYVal = _yScale(_yValue.apply(this, [p]), p.index);
                  p.selected = (colXVal >= x0) && (colXVal < x3) && (colYVal >= y0) && (colYVal < y3);
                  if (p.selected)
-                     selectedDataKeys.push(p[this._columns.key]);
+                     selectedDataKeys.push(p[_config.columns.key]);
              }
              return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
          }.bind(this));
@@ -327,15 +312,15 @@
      }
 
      p._brushed = function () {
-         var extent = this._brush.extent();
-         this._point.each(function (d) {
+         var extent = _brush.extent();
+         _point.each(function (d) {
              d.scanned = d.selected = false;
          });
-         var keys = this.search.call(this, this._quadTree, extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
+         var keys = this.search.call(this, _quadTree, extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
          this.select();
          if (keys) {
-             if (this.interactions.onSelect && this.interactions.onSelect.callback) {
-                 this.interactions.onSelect.callback.call(this, keys);
+             if (_config.interactions.onSelect && _config.interactions.onSelect.callback) {
+                 _config.interactions.onSelect.callback.call(this, keys);
              }
          }
 
@@ -354,8 +339,8 @@
          var p = node.point;
          if (p) {
              p.scanned = true;
-             var dx = this._xScale(this._xValue(p), p.index) - x,
-                 dy = this._yScale(this._yValue(p), p.index) - y,
+             var dx = _xScale(_xValue.apply(this, [p]), p.index) - x,
+                 dy = _yScale(_yValue.apply(this, [p]), p.index) - y,
                  d = Math.sqrt(dx * dx + dy * dy);
              if (d < best.d) {
                  best.d = d;
@@ -377,36 +362,36 @@
      }
 
 
-     p._mousemove = function () {
-         pt = d3.selectAll(this._container + 'pt');
+     function _mousemove() {
+         pt = d3.selectAll(_container + 'pt');
          var x = +pt.attr('cx'),
              y = +pt.attr('cy');
 
-         this._point.each(function (d) {
+         _point.each(function (d) {
              d.scanned = d.selected = false;
          });
-         this._kdRect.each(function (d) {
+         _kdRect.each(function (d) {
              d.visited = false;
          });
 
          var best = this.nearest.call(this, x, y, {
              d: 8,
              p: null
-         }, this._quadTree);
+         }, _quadTree);
          if (best.p) {
              best.p.selected = true;
              //this.probe(best.p);
          }
          // not sure is this the right way, will check
          this.probe();
-         if (this.interactions.onProbe && this.interactions.onProbe.callback) {
+         if (_config.interactions.onProbe && _config.interactions.onProbe.callback) {
              if (best.p) {
-                 this.interactions.onProbe.callback.call(this, best.p[this._columns.key]);
+                 _config.interactions.onProbe.callback.call(this, best.p[_config.columns.key]);
              } else {
-                 this.interactions.onProbe.callback.call(this, null);
+                 _config.interactions.onProbe.callback.call(this, null);
              }
          }
-         /*this._kdRect.style('fill', function (d) {
+         /*_kdRect.style('fill', function (d) {
     return d.visited ? kdColor(d.depth) : 'none';
 });*/
 
@@ -418,21 +403,21 @@
      // Internal calls doesnt require
      p.probe = function (key) {
          if (key) {
-             this._point.each(function (d) {
+             _point.each(function (d) {
                  d.scanned = d.selected = false;
              });
-             this._data.map(function (d) {
-                 if (d[this._columns.key] == key) d.selected = true;
-             }.bind(this))
+             _config.data.map(function (d) {
+                 if (d[_config.columns.key] == key) d.selected = true;
+             })
          } else if (key === null) {
-             this._point.each(function (d) {
+             _point.each(function (d) {
                  d.scanned = d.selected = false;
              });
          }
-         this._point.classed("scanned", function (d) {
+         _point.classed("scanned", function (d) {
              return d.scanned;
          });
-         this._point.classed("selected", function (d) {
+         _point.classed("selected", function (d) {
              return d.selected;
          });
      }
@@ -441,27 +426,27 @@
      // Internal calls doesnt require
      p.select = function (keys) {
          if (keys) {
-             this._point.each(function (d) {
+             _point.each(function (d) {
                  d.scanned = d.selected = false;
              });
-             this._data.filter(function (d) {
+             _config.data.filter(function (d) {
                  for (var i = 0; i < keys.length; i++) {
-                     if (d[this._columns.key] === keys[i])
+                     if (d[_config.columns.key] === keys[i])
                          d.selected = true;
                  }
              }.bind(this))
 
          }
          if (keys && keys.length === 0) {
-             this._point.each(function (d) {
+             _point.each(function (d) {
                  d.scanned = d.selected = false;
              });
          }
 
-         this._point.classed("scanned", function (d) {
+         _point.classed("scanned", function (d) {
              return d.scanned;
          });
-         this._point.classed("selected", function (d) {
+         _point.classed("selected", function (d) {
              return d.selected;
          });
      }
