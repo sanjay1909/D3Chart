@@ -33,7 +33,7 @@
          this._xColumnType;
          this._yColumnType;
 
-         this._initializeChart();
+         initializeChart.call(this);
          if (this._data)
              this.renderChart(this._data);
      }
@@ -49,7 +49,7 @@
       * map function - maps from data value to display value
       * axis - sets up axis
       */
-     p._initializeChart = function () {
+     function initializeChart() {
          var chart = this;
          // setup x
          this._xValue = function (d, i) {
@@ -145,15 +145,29 @@
              .on("brush", this._brushed.bind(this));
      }
 
-     // render Chart
 
-     function domainFn() {
+
+     p.setXAttribute = function (xColumn) {
+         this._columns.x = xColumn;
+         updateXaxis.call(this);
+
+     }
+
+     p.setYAttribute = function (yColumn) {
+         this._columns.y = yColumn;
+         updateYaxis.call(this);
 
      }
 
      // [d3.min(this._data, this._xValue.bind(this)) - 1, d3.max(this._data, this._xValue.bind(this)) + 1]
      p.renderChart = function (data) {
-         this._data = data;
+         if (data)
+             this._data = data;
+         if (!this._data) {
+             console.log('Data not found');
+             return;
+         }
+
          this._xScale.domain([d3.min(this._data, this._xValue.bind(this)), d3.max(this._data, this._xValue.bind(this))]);
          this._yScale.domain([d3.min(this._data, this._yValue.bind(this)), d3.max(this._data, this._yValue.bind(this))]);
 
@@ -163,11 +177,11 @@
              .y(this._yMap.bind(this))
              (this._data);
 
-         this._xAxis.ticks(data.length);
+         this._xAxis.ticks(this._data.length);
 
          if (this._xColumnType === "string") {
              this._xAxis.tickFormat(function (i) {
-                 var labels = data.map(function (d, i) {
+                 var labels = this._data.map(function (d, i) {
                      return d[this._columns.x];
                  }.bind(this));
                  return labels[i];
@@ -188,7 +202,7 @@
 
          if (this._yColumnType === "string") {
              this._yAxis.tickFormat(function (i) {
-                 var labels = data.map(function (d, i) {
+                 var labels = this._data.map(function (d, i) {
                      return d[this._columns.y];
                  }.bind(this));
                  return labels[i];
@@ -227,7 +241,7 @@
 
          // draw dots
          this._point = this._svg.selectAll(".point")
-             .data(data)
+             .data(this._data)
              .enter().append("circle")
              .attr("class", "point")
              .attr("r", 6)
@@ -242,6 +256,33 @@
          this._svg.append("g")
              .attr("class", "brush")
              .call(this._brush);
+     }
+
+     function updateXaxis() {
+         this._xScale.domain([d3.min(this._data, this._xValue.bind(this)), d3.max(this._data, this._xValue.bind(this))]);
+
+         var container = d3.select(this._container).transition();
+
+         container.selectAll(".point")
+             .duration(750)
+             .attr("cx", this._xMap.bind(this));
+
+         container.select(".x.axis") // change the x axis
+             .duration(750)
+             .call(this._xAxis);
+     }
+
+     function updateYaxis() {
+         this._yScale.domain([d3.min(this._data, this._yValue.bind(this)), d3.max(this._data, this._yValue.bind(this))]);
+         var container = d3.select(this._container).transition();
+
+         container.selectAll(".point")
+             .duration(750)
+             .attr("cy", this._yMap.bind(this));
+
+         container.select(".y.axis") // change the y axis
+             .duration(750)
+             .call(this._yAxis);
      }
 
 
@@ -293,7 +334,7 @@
          var keys = this.search.call(this, this._quadTree, extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
          this.select();
          if (keys) {
-             if (this.interactions.onSelect.callback) {
+             if (this.interactions.onSelect && this.interactions.onSelect.callback) {
                  this.interactions.onSelect.callback.call(this, keys);
              }
          }
@@ -358,7 +399,7 @@
          }
          // not sure is this the right way, will check
          this.probe();
-         if (this.interactions.onProbe.callback) {
+         if (this.interactions.onProbe && this.interactions.onProbe.callback) {
              if (best.p) {
                  this.interactions.onProbe.callback.call(this, best.p[this._columns.key]);
              } else {

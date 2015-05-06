@@ -2,12 +2,11 @@
     fill: #999;
     stroke: #fff;
 }
-
-.point.scanned {
+/*.point.scanned {
     fill: orange;
     fill-opacity: 1;
     stroke: brown;
-}
+}*/
 
 .point.selected {
     fill: red;
@@ -16,7 +15,7 @@
 
 .node {
     fill: none;
-    stroke: #ddd;
+    stroke: none;
     shape-rendering: crispEdges;
 }
 
