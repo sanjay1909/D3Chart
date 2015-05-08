@@ -19,6 +19,8 @@
      var _quadTreeFactory, _quadTree, _quadTreeFn, _brush, _kdRect;
      var _xColumnType, _yColumnType;
 
+     var _xAxisLabel, _yAxisLabel;
+
      var _svg, _point;
      var _xScale, _yScale;
      var _xAxis, _yAxis;
@@ -190,13 +192,9 @@
          _xScale.domain([d3.min(_config.data, xValue), d3.max(_config.data, xValue)]);
          _quadTreeFactory.x(_xMap);
 
-
          _quadTree = _quadTreeFactory(_config.data);
          _kdRect.data(createNodes(_quadTree));
 
-
-
-         //_quadTreeFactory.x(_xMap);
          var container = d3.select(_container).transition();
 
          container.selectAll(".point")
@@ -222,16 +220,16 @@
          container.select(".x.axis") // change the x axis
              .duration(750)
              .call(_xAxis);
+
+         _xAxisLabel.text(_config.columns.x);
      }
 
      function updateYaxis() {
          _yScale.domain([d3.min(_config.data, yValue), d3.max(_config.data, yValue)]);
 
          _quadTreeFactory.y(_yMap);
-
          _quadTree = _quadTreeFactory(_config.data);
          _kdRect.data(createNodes(_quadTree));
-
 
          var container = d3.select(_container).transition();
 
@@ -258,6 +256,8 @@
          container.select(".y.axis") // change the y axis
              .duration(750)
              .call(_yAxis);
+
+         _yAxisLabel.text(_config.columns.y);
      }
 
      // PDS Collect a list of nodes to draw rectangles, adding extent and depth data
@@ -386,6 +386,13 @@
                  return "rotate(-45)"
              });
 
+         _xAxisLabel = _svg.append("text")
+             .attr("y", _config.size.height + _config.margin.top + _config.margin.bottom / 2)
+             .attr("x", _config.size.width / 2)
+             .attr("dy", "1em")
+             .style("text-anchor", "middle")
+             .text(_config.columns.x);
+
          if (_yColumnType === "string") {
              _yAxis.tickFormat(function (i) {
                  var labels = _config.data.map(function (d, i) {
@@ -398,8 +405,9 @@
          // y-axis
          _svg.append("g")
              .attr("class", "y axis")
-             .call(_yAxis)
-             .append("text")
+             .call(_yAxis);
+
+         _yAxisLabel = _svg.append("text")
              .attr("transform", "rotate(-90)")
              .attr("y", 0 - _config.margin.left)
              .attr("x", 0 - _config.size.height / 2)
