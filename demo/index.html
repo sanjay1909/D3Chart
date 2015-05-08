@@ -26,6 +26,7 @@
         <select id="ySel" onchange="updateYAxis()"> </select>
     </div>
     <div id="div1"></div>
+    <div id="div2"></div>
 
 
     <script type="text/javascript">
@@ -54,6 +55,33 @@
         }
 
         var chart = new d3Chart.Scatterplot(config);
+
+        var config2 = {
+            container: "div2",
+            margin: {
+                top: 20,
+                right: 20,
+                bottom: 200,
+                left: 80
+            },
+            size: {
+                width: 500,
+                height: 500
+            },
+            columns: {
+                x: "name",
+                y: "fat",
+                key: "name"
+            },
+            interactions: {
+                onProbe: {
+                    showToolTip: true
+                }
+            }
+        }
+
+        var chart2 = new d3Chart.Scatterplot(config2);
+
         var headerNames;
         d3.csv("cereal.csv", function (error, rows) {
             headerNames = d3.keys(rows[0]);
@@ -75,6 +103,7 @@
 
             console.log(headerNames);
             chart.renderChart(rows);
+            chart2.renderChart(rows);
             xSelect.value = config.columns.x;
             ySelect.value = config.columns.y;
         });
