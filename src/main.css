@@ -15,7 +15,7 @@
 
 .node {
     fill: none;
-    stroke: #afa2dc;
+    stroke: none;
     shape-rendering: crispEdges;
 }
 
