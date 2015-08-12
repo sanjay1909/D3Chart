@@ -1,5 +1,26 @@
  this.d3Chart = {};
 
+ (function () {
+     var throttle = function (type, name, obj) {
+         var obj = obj || window;
+         var running = false;
+         var func = function () {
+             if (running) {
+                 return;
+             }
+             running = true;
+             requestAnimationFrame(function () {
+                 obj.dispatchEvent(new CustomEvent(name));
+                 running = false;
+             });
+         };
+         obj.addEventListener(type, func);
+     };
+
+     /* init - you can init any event */
+     throttle("resize", "optimizedResize");
+ })();
+
 
  (function () {
      function Scatterplot(config) {
@@ -9,6 +30,31 @@
              this.internal.container = "#" + config.container;
          } else {
              this.internal.container = "body";
+         }
+
+         if (config.size) {
+             this.internal.size = this.internal.config.size;
+             if (!config.size.width) this.internal.size.width = parseInt(d3.select(this.internal.container).style('width'), 10);
+             if (!config.size.height) {
+                 this.internal.size.height = parseInt(d3.select(this.internal.container).style('height'), 10);
+                 if (this.internal.size.height == 0) this.internal.size.height = 400 // when div dont have child value will be zero
+             }
+
+         } else {
+             this.internal.size = {};
+             this.internal.size.width = parseInt(d3.select(this.internal.container).style('width'), 10);
+             this.internal.size.height = parseInt(d3.select(this.internal.container).style('height'), 10);
+             if (this.internal.size.height == 0) this.internal.size.height = 400 // when div dont have child value will be zero
+         }
+         if (config.margin) {
+             this.internal.margin = this.internal.config.margin;
+             if (!config.margin.left) this.internal.margin.left = 20;
+             if (!config.margin.right) this.internal.margin.right = 20;
+             if (!config.margin.top) this.internal.margin.top = 20;
+             if (!config.margin.bottom) this.internal.margin.bottom = 20;
+         } else {
+             this.internal.margin = {};
+             this.internal.margin.left = this.internal.margin.right = this.internal.margin.top = this.internal.margin.bottom = 20;
          }
 
          this.internal.xScale;
@@ -21,6 +67,7 @@
          this.internal.yColumnType;
 
          this.internal.svg;
+         this.internal.chartGroup; // group inside the SVG
          this.internal.point;
          this.internal.brush;
          this.internal.kdRect;
@@ -30,6 +77,8 @@
          initializeChart.call(this);
          if (this.internal.config.data)
              this.renderChart(this.internal.config.data);
+
+
      }
 
 
@@ -297,6 +346,58 @@
          return nodes;
      }
 
+     /*function resize() {
+         // update width
+         this.internal.size.width = parseInt(d3.select(this.internal.container).style('width'), 10);
+         this.internal.size.width = this.internal.size.width - this.internal.margin.left - this.internal.margin.right;
+         // update height
+         this.internal.size.height = parseInt(d3.select(this.internal.container).style('height'), 10);
+         this.internal.size.height = this.internal.size.height - this.internal.margin.top - this.internal.margin.bottom;
+
+         // resize the chart
+         this.internal.xScale.range([0, this.internal.size.width]);
+         this.internal.yScale.range([0, this.internal.size.height]);
+
+         d3.select(this.internal.chartGroup.node().parentNode)
+             .style('height', (this.internal.size.width + this.internal.margin.top + this.internal.margin.botom) + 'px')
+             .style('width', (this.internal.size.height + this.internal.margin.left + this.internal.margin.right) + 'px');
+
+
+         // update axes
+         this.internal.chartGroup.select('.x.axis.top').call(this.internal.xAxis.orient('bottom'));
+         this.internal.chartGroup.select('.x.axis.bottom').call(this.internal.xAxis.orient('left'));
+
+     }*/
+
+     function responsivefy(svg) {
+         // get container
+         var container = d3.select(svg.node().parentNode),
+             width = parseInt(svg.style("width")),
+             height = parseInt(svg.style("height"));
+         //aspect = width / height;
+
+         // add viewBox
+         // and call resize so that svg resizes on inital page load
+         svg.attr("viewBox", "0 0 " + width + " " + height)
+             .attr("perserveAspectRatio", "none")
+             .call(resize);
+
+         // to register multiple listeners for same event type,
+         // you need to add namespace, i.e., 'click.foo'
+         // necessary if you call invoke this function for multiple svgs
+         // api docs: https://github.com/mbostock/d3/wiki/Selections#on
+         d3.select(window).on("resize." + container.attr("id"), resize);
+
+         // get width of container and resize svg to fit it
+         function resize() {
+             var targetWidth = parseInt(container.style("width"));
+             var targetHeight = parseInt(container.style("height"));
+
+             svg.attr("width", targetWidth);
+             //svg.attr("height", targetHeight);
+         }
+     }
+
 
      /*
       * value accessor - returns the value to encode for a given data object.
@@ -306,18 +407,16 @@
       */
      function initializeChart() {
          var chart = this;
-         var size = this.internal.config.size;
-         var margin = this.internal.config.margin;
 
          this.internal.xScale = d3.scale.linear()
-             .range([0, size.width]); // value -> display
+             .range([0, this.internal.size.width]); // value -> display
 
          this.internal.xAxis = d3.svg.axis()
              .scale(this.internal.xScale)
              .orient("bottom");
 
          this.internal.yScale = d3.scale.linear()
-             .range([size.height, 0]); // value -> display
+             .range([this.internal.size.height, 0]); // value -> display
 
          this.internal.yAxis = d3.svg.axis()
              .scale(this.internal.yScale)
@@ -325,10 +424,12 @@
 
          // add the graph canvas to the mentioned of the webpage
          this.internal.svg = d3.select(this.internal.container).append("svg")
-             .attr("width", size.width + margin.left + margin.right)
-             .attr("height", size.height + margin.top + margin.bottom)
-             .append("g")
-             .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+             .attr("width", this.internal.size.width + this.internal.margin.left + this.internal.margin.right)
+             .attr("height", this.internal.size.height + this.internal.margin.top + this.internal.margin.bottom)
+             .call(responsivefy);
+
+         this.internal.chartGroup = this.internal.svg.append("g")
+             .attr("transform", "translate(" + this.internal.margin.left + "," + this.internal.margin.top + ")")
              .on("mousemove", function (d) {
                  var xy = d3.mouse(d3.select(this)[0][0]);
                  chart.internal.svg.selectAll(chart.internal.container + "pt")
@@ -342,9 +443,27 @@
              .range(["#efe", "#060"]);*/
 
          this.internal.brush = d3.svg.brush()
-             .x(d3.scale.identity().domain([0 - 5, size.width + 5]))
-             .y(d3.scale.identity().domain([0 - 5, size.height + 5]))
+             .x(d3.scale.identity().domain([0 - 5, this.internal.size.width + 5]))
+             .y(d3.scale.identity().domain([0 - 5, this.internal.size.height + 5]))
              .on("brush", brushListener.bind(chart));
+
+         var chartArray = this.internal.svg;
+         var container = chartArray[0][0].parentElement;
+
+         // handle event
+         /* window.addEventListener("optimizedResize", function () {
+              var targetWidth = container.clientWidth;
+              var targetHeight = container.clientHeight;
+              chartArray.attr("width", targetWidth);
+              chartArray.attr("height", targetHeight);
+          });*/
+
+         // handle event
+
+         // d3.select(window).on('resize', resize.bind(chart));
+         // window.addEventListener("optimizedResize", resize.bind(chart));
+
+
      }
 
      var p = Scatterplot.prototype;
@@ -365,8 +484,6 @@
 
      p.renderChart = function (records) {
 
-         var size = this.internal.config.size;
-         var margin = this.internal.config.margin;
          var columns = this.internal.config.columns;
 
          if (records)
@@ -383,7 +500,7 @@
 
 
          this.internal.quadTreeFactory = d3.geom.quadtree()
-             .extent([[0, 0], [size.width, size.height]])
+             .extent([[0, 0], [this.internal.size.width, this.internal.size.height]])
              .x(xMap.bind(this))
              .y(yMap.bind(this));
 
@@ -401,9 +518,9 @@
              }.bind(this));
          }
          // x-axis
-         this.internal.svg.append("g")
+         this.internal.chartGroup.append("g")
              .attr("class", "x axis")
-             .attr("transform", "translate(0," + size.height + ")")
+             .attr("transform", "translate(0," + this.internal.size.height + ")")
              .call(this.internal.xAxis)
              .selectAll("text")
              .style("text-anchor", "end")
@@ -413,9 +530,9 @@
                  return "rotate(-45)"
              });
 
-         this.internal.xAxisLabel = this.internal.svg.append("text")
-             .attr("y", size.height + margin.top + margin.bottom / 2)
-             .attr("x", size.width / 2)
+         this.internal.xAxisLabel = this.internal.chartGroup.append("text")
+             .attr("y", this.internal.size.height + this.internal.margin.top + this.internal.margin.bottom / 2)
+             .attr("x", this.internal.size.width / 2)
              .attr("dy", "1em")
              .style("text-anchor", "middle")
              .text(columns.x);
@@ -430,20 +547,20 @@
          }
 
          // y-axis
-         this.internal.svg.append("g")
+         this.internal.chartGroup.append("g")
              .attr("class", "y axis")
              .call(this.internal.yAxis);
 
-         this.internal.yAxisLabel = this.internal.svg.append("text")
+         this.internal.yAxisLabel = this.internal.chartGroup.append("text")
              .attr("transform", "rotate(-90)")
-             .attr("y", 0 - margin.left)
-             .attr("x", 0 - size.height / 2)
+             .attr("y", 0 - this.internal.margin.left)
+             .attr("x", 0 - this.internal.size.height / 2)
              .attr("dy", "1em")
              .style("text-anchor", "middle")
              .text(columns.y);
 
 
-         this.internal.kdRect = this.internal.svg.selectAll(".node")
+         this.internal.kdRect = this.internal.chartGroup.selectAll(".node")
              .data(createNodes(this.internal.quadTree))
              .enter().append("rect")
              .attr("class", "node")
@@ -461,7 +578,7 @@
              });
 
          // draw dots
-         this.internal.point = this.internal.svg.selectAll(".point")
+         this.internal.point = this.internal.chartGroup.selectAll(".point")
              .data(data)
              .enter().append("circle")
              .attr("class", "point")
@@ -469,12 +586,12 @@
              .attr("cx", xMap.bind(this))
              .attr("cy", yMap.bind(this));
 
-         this.internal.svg.append("circle")
+         this.internal.chartGroup.append("circle")
              .attr("id", this.internal.config.container + "pt")
              .attr("r", 6)
              .style("fill", "none");
 
-         this.internal.svg.append("g")
+         this.internal.chartGroup.append("g")
              .attr("class", "brush")
              .call(this.internal.brush);
      }
@@ -535,6 +652,8 @@
              return d.selected;
          });
      }
+
+
 
      d3Chart.Scatterplot = Scatterplot;
 
