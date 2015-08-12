@@ -1,4 +1,9 @@
- this.d3Chart = {};
+ //namesapce
+ if (typeof window === 'undefined') {
+     this.d3Chart = this.d3Chart || {};
+ } else {
+     window.d3Chart = window.d3Chart || {};
+ }
 
  (function () {
      var throttle = function (type, name, obj) {
