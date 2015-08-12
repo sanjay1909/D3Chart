@@ -1,6 +1,6 @@
 {
-  "name": "D3Chart",
-  "version": "1.0.0",
+  "name": "d3chart",
+  "version": "0.1.0",
   "description": "Visualization framework built on d3",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/sanjay1909/D3Chart.git"
+    "url": "git+https://github.com/sanjay1909/D3Chart.git"
   },
   "keywords": [
     "d3",
@@ -23,6 +23,12 @@
   },
   "homepage": "https://github.com/sanjay1909/D3Chart",
   "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-contrib-concat": "^0.5.1",
+    "grunt-contrib-uglify": "^0.8.1",
+    "grunt-css": "^0.5.4"
+  },
+  "dependencies": {
     "grunt": "^0.4.5",
     "grunt-contrib-concat": "^0.5.1",
     "grunt-contrib-uglify": "^0.8.1",
