@@ -25,38 +25,6 @@
  (function () {
      function Scatterplot(config) {
          this.internal = {};
-         this.internal.config = config;
-         if (config.container) {
-             this.internal.container = "#" + config.container;
-         } else {
-             this.internal.container = "body";
-         }
-
-         if (config.size) {
-             this.internal.size = this.internal.config.size;
-             if (!config.size.width) this.internal.size.width = parseInt(d3.select(this.internal.container).style('width'), 10);
-             if (!config.size.height) {
-                 this.internal.size.height = parseInt(d3.select(this.internal.container).style('height'), 10);
-                 if (this.internal.size.height == 0) this.internal.size.height = 400 // when div dont have child value will be zero
-             }
-
-         } else {
-             this.internal.size = {};
-             this.internal.size.width = parseInt(d3.select(this.internal.container).style('width'), 10);
-             this.internal.size.height = parseInt(d3.select(this.internal.container).style('height'), 10);
-             if (this.internal.size.height == 0) this.internal.size.height = 400 // when div dont have child value will be zero
-         }
-         if (config.margin) {
-             this.internal.margin = this.internal.config.margin;
-             if (!config.margin.left) this.internal.margin.left = 20;
-             if (!config.margin.right) this.internal.margin.right = 20;
-             if (!config.margin.top) this.internal.margin.top = 20;
-             if (!config.margin.bottom) this.internal.margin.bottom = 20;
-         } else {
-             this.internal.margin = {};
-             this.internal.margin.left = this.internal.margin.right = this.internal.margin.top = this.internal.margin.bottom = 20;
-         }
-
          this.internal.xScale;
          this.internal.yScale;
          this.internal.xAxis;
@@ -74,10 +42,12 @@
          this.internal.quadTreeFactory;
          this.internal.quadTree;
 
-         initializeChart.call(this);
-         if (this.internal.config.data)
-             this.renderChart(this.internal.config.data);
+         if (config) {
+             this.create(config);
+             if (this.internal.config.data)
+                 this.renderChart(this.internal.config.data);
 
+         }
 
      }
 
@@ -469,7 +439,6 @@
      var p = Scatterplot.prototype;
 
      p.create = function (config) {
-         this.internal = this.internal || {};
          this.internal.config = config;
          if (config.container) {
              this.internal.container = "#" + config.container;
@@ -501,25 +470,8 @@
              this.internal.margin = {};
              this.internal.margin.left = this.internal.margin.right = this.internal.margin.top = this.internal.margin.bottom = 20;
          }
-
-         this.internal.xScale;
-         this.internal.yScale;
-         this.internal.xAxis;
-         this.internal.yAxis;
-         this.internal.xAxisLabel;
-         this.internal.yAxisLabel;
-         this.internal.xColumnType;
-         this.internal.yColumnType;
-
-         this.internal.svg;
-         this.internal.chartGroup; // group inside the SVG
-         this.internal.point;
-         this.internal.brush;
-         this.internal.kdRect;
-         this.internal.quadTreeFactory;
-         this.internal.quadTree;
-
          initializeChart.call(this);
+
 
      }
 
