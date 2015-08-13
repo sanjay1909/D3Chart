@@ -475,6 +475,11 @@
              this.internal.margin = {};
              this.internal.margin.left = this.internal.margin.right = this.internal.margin.top = this.internal.margin.bottom = 20;
          }
+         this.internal.config.columns = this.internal.config.columns || {
+             x: '',
+             y: ''
+         };
+         this.internal.config.data = this.internal.config.data || [];
          initializeChart.call(this);
 
 
