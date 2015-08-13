@@ -446,7 +446,7 @@
      p.create = function (config) {
          this.internal.config = config;
          if (config.container) {
-             this.internal.container = "#" + config.container;
+             this.internal.container = config.container;
          } else {
              this.internal.container = "body";
          }
