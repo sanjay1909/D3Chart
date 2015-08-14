@@ -195,7 +195,7 @@
      function mousemoveListener() {
          var onProbe = this.internal.config.interactions.onProbe;
          var key = this.internal.config.columns.key;
-         pt = d3.selectAll(this.internal.container + 'pt');
+         pt = d3.selectAll(this.internal.container.id + 'pt');
          var x = +pt.attr('cx'),
              y = +pt.attr('cy');
 
@@ -444,11 +444,34 @@
      var p = Scatterplot.prototype;
 
      p.create = function (config) {
-         this.internal.config = config;
+         // this.internal.config = config;
+         //to-do Implement a better way to maintian config Json
          if (config.container) {
-             this.internal.container = config.container;
+             if (config.container.constructor.name === 'String') {
+                 this.internal.container = {
+                     'element': document.getElementById(config.container),
+                     'id': config.container
+                 };
+
+             } else {
+                 //to-do check its dom element if so, get its ID too
+                 if (config.container.constructor.name === 'HTMLDivElement') {
+                     this.internal.container = {
+                         'element': config.container,
+                         'id': config.container.id
+                     };
+                 } else {
+                     console.log("Error: " + config.container + " - Not a HTMLDivElement element ")
+                 }
+
+             }
+
          } else {
-             this.internal.container = "body";
+             if (this.internal.container.constructor.name === 'String') {
+                 this.internal.container.element = d3.select('body')
+                 this.internal.container.id = 'body';
+             }
+
          }
 
          if (config.size) {
@@ -602,7 +625,7 @@
              .attr("cy", yMap.bind(this));
 
          this.internal.chartGroup.append("circle")
-             .attr("id", this.internal.config.container + "pt")
+             .attr("id", this.internal.config.container.id + "pt")
              .attr("r", 6)
              .style("fill", "none");
 
