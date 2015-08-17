@@ -49,7 +49,7 @@
 
          if (config) {
              this.create(config);
-             if (this.internal.config.data)
+             if (this.internal.config.data.length > 0)
                  this.renderChart(this.internal.config.data);
 
          }
@@ -195,9 +195,9 @@
      function mousemoveListener() {
          var onProbe = this.internal.config.interactions.onProbe;
          var key = this.internal.config.columns.key;
-         pt = d3.selectAll(this.internal.container.id + 'pt');
-         var x = +pt.attr('cx'),
-             y = +pt.attr('cy');
+         // pt = d3.selectAll(this.internal.config.container.id + 'pt');
+         var x = +this.internal.probeCircle.attr('cx'),
+             y = +this.internal.probeCircle.attr('cy');
 
          this.internal.point.each(function (d) {
              d.scanned = d.selected = false;
@@ -235,7 +235,7 @@
          this.internal.quadTree = this.internal.quadTreeFactory(data);
          this.internal.kdRect.data(createNodes(this.internal.quadTree));
 
-         var container = d3.select(this.internal.container).transition();
+         var container = d3.select(this.internal.config.container.element).transition();
 
          container.selectAll(".point")
              .duration(750)
@@ -275,7 +275,7 @@
          this.internal.quadTree = this.internal.quadTreeFactory(data);
          this.internal.kdRect.data(createNodes(this.internal.quadTree));
 
-         var container = d3.select(this.internal.container).transition();
+         var container = d3.select(this.internal.config.container.element).transition();
 
          container.selectAll(".point")
              .duration(750)
@@ -323,10 +323,10 @@
 
      /*function resize() {
          // update width
-         this.internal.size.width = parseInt(d3.select(this.internal.container).style('width'), 10);
+         this.internal.size.width = parseInt(d3.select(this.internal.config.container).style('width'), 10);
          this.internal.size.width = this.internal.size.width - this.internal.margin.left - this.internal.margin.right;
          // update height
-         this.internal.size.height = parseInt(d3.select(this.internal.container).style('height'), 10);
+         this.internal.size.height = parseInt(d3.select(this.internal.config.container).style('height'), 10);
          this.internal.size.height = this.internal.size.height - this.internal.margin.top - this.internal.margin.bottom;
 
          // resize the chart
@@ -384,32 +384,31 @@
          var chart = this;
 
          this.internal.xScale = d3.scale.linear()
-             .range([0, this.internal.size.width]); // value -> display
+             .range([0, this.internal.config.size.width]); // value -> display
 
          this.internal.xAxis = d3.svg.axis()
              .scale(this.internal.xScale)
              .orient("bottom");
 
          this.internal.yScale = d3.scale.linear()
-             .range([this.internal.size.height, 0]); // value -> display
+             .range([this.internal.config.size.height, 0]); // value -> display
 
          this.internal.yAxis = d3.svg.axis()
              .scale(this.internal.yScale)
              .orient("left");
 
          // add the graph canvas to the mentioned of the webpage
-         this.internal.svg = d3.select(this.internal.container).append("svg")
-             .attr("width", this.internal.size.width + this.internal.margin.left + this.internal.margin.right)
-             .attr("height", this.internal.size.height + this.internal.margin.top + this.internal.margin.bottom)
+         this.internal.svg = d3.select(this.internal.config.container.element).append("svg")
+             .attr("width", this.internal.config.size.width + this.internal.config.margin.left + this.internal.config.margin.right)
+             .attr("height", this.internal.config.size.height + this.internal.config.margin.top + this.internal.config.margin.bottom)
              .call(responsivefy);
 
          this.internal.chartGroup = this.internal.svg.append("g")
-             .attr("transform", "translate(" + this.internal.margin.left + "," + this.internal.margin.top + ")")
+             .attr("transform", "translate(" + this.internal.config.margin.left + "," + this.internal.config.margin.top + ")")
              .on("mousemove", function (d) {
                  var xy = d3.mouse(d3.select(this)[0][0]);
-                 chart.internal.svg.selectAll(chart.internal.container + "pt")
-                     .attr("cx", xy[0])
-                     .attr("cy", xy[1]);
+                 chart.internal.probeCircle.attr("cx", xy[0]);
+                 chart.internal.probeCircle.attr("cy", xy[1]);
                  mousemoveListener.call(chart);
              });
 
@@ -417,26 +416,24 @@
              .domain([0, 8]) // max depth of quadtree
              .range(["#efe", "#060"]);*/
 
+         // Brush for Selection
          this.internal.brush = d3.svg.brush()
-             .x(d3.scale.identity().domain([0 - 5, this.internal.size.width + 5]))
-             .y(d3.scale.identity().domain([0 - 5, this.internal.size.height + 5]))
+             .x(d3.scale.identity().domain([0 - 5, this.internal.config.size.width + 5]))
+             .y(d3.scale.identity().domain([0 - 5, this.internal.config.size.height + 5]))
              .on("brush", brushListener.bind(chart));
 
-         var chartArray = this.internal.svg;
-         var container = chartArray[0][0].parentElement;
+         this.internal.chartGroup.append("g")
+             .attr("class", "brush")
+             .call(this.internal.brush);
 
-         // handle event
-         /* window.addEventListener("optimizedResize", function () {
-              var targetWidth = container.clientWidth;
-              var targetHeight = container.clientHeight;
-              chartArray.attr("width", targetWidth);
-              chartArray.attr("height", targetHeight);
-          });*/
 
-         // handle event
+         // probe Circle
+         this.internal.probeCircle = this.internal.chartGroup.append("circle")
+             .attr("id", this.internal.config.container.id + "pt")
+             .attr("r", 6)
+             .style("fill", "none");
 
-         // d3.select(window).on('resize', resize.bind(chart));
-         // window.addEventListener("optimizedResize", resize.bind(chart));
+
 
 
      }
@@ -446,9 +443,10 @@
      p.create = function (config) {
          // this.internal.config = config;
          //to-do Implement a better way to maintian config Json
+         this.internal.config = {};
          if (config.container) {
              if (config.container.constructor.name === 'String') {
-                 this.internal.container = {
+                 this.internal.config.container = {
                      'element': document.getElementById(config.container),
                      'id': config.container
                  };
@@ -456,7 +454,7 @@
              } else {
                  //to-do check its dom element if so, get its ID too
                  if (config.container.constructor.name === 'HTMLDivElement') {
-                     this.internal.container = {
+                     this.internal.config.container = {
                          'element': config.container,
                          'id': config.container.id
                      };
@@ -467,42 +465,61 @@
              }
 
          } else {
-             if (this.internal.container.constructor.name === 'String') {
-                 this.internal.container.element = d3.select('body')
-                 this.internal.container.id = 'body';
+             if (this.internal.config.container.constructor.name === 'String') {
+                 this.internal.config.container = {
+                     'element': document.getElementById(config.container),
+                     'id': 'body'
+                 };
              }
 
          }
 
          if (config.size) {
-             this.internal.size = this.internal.config.size;
-             if (!config.size.width) this.internal.size.width = parseInt(d3.select(this.internal.container).style('width'), 10);
+             this.internal.config.size = config.size;
+             if (!config.size.width) this.internal.config.size.width = parseInt(d3.select(this.internal.config.container.element).style('width'), 10);
              if (!config.size.height) {
-                 this.internal.size.height = parseInt(d3.select(this.internal.container).style('height'), 10);
-                 if (this.internal.size.height == 0) this.internal.size.height = 400 // when div dont have child value will be zero
+                 this.internal.config.size.height = parseInt(d3.select(this.internal.config.container.element).style('height'), 10);
+                 if (this.internal.config.size.height == 0) this.internal.config.size.height = 400 // when div dont have child value will be zero
              }
 
          } else {
-             this.internal.size = {};
-             this.internal.size.width = parseInt(d3.select(this.internal.container).style('width'), 10);
-             this.internal.size.height = parseInt(d3.select(this.internal.container).style('height'), 10);
-             if (this.internal.size.height == 0) this.internal.size.height = 400 // when div dont have child value will be zero
+             this.internal.config.size = {};
+             this.internal.config.size.width = parseInt(d3.select(this.internal.config.container.element).style('width'), 10);
+             this.internal.config.size.height = parseInt(d3.select(this.internal.config.container.element).style('height'), 10);
+             if (this.internal.config.size.height == 0) this.internal.config.size.height = 400 // when div dont have child value will be zero
          }
          if (config.margin) {
-             this.internal.margin = this.internal.config.margin;
-             if (!config.margin.left) this.internal.margin.left = 20;
-             if (!config.margin.right) this.internal.margin.right = 20;
-             if (!config.margin.top) this.internal.margin.top = 20;
-             if (!config.margin.bottom) this.internal.margin.bottom = 20;
+             this.internal.config.margin = config.margin;
+             if (!config.margin.left) this.internal.config.margin.left = 20;
+             if (!config.margin.right) this.internal.config.margin.right = 20;
+             if (!config.margin.top) this.internal.config.margin.top = 20;
+             if (!config.margin.bottom) this.internal.config.margin.bottom = 20;
          } else {
-             this.internal.margin = {};
-             this.internal.margin.left = this.internal.margin.right = this.internal.margin.top = this.internal.margin.bottom = 20;
+             this.internal.config.margin = {};
+             this.internal.config.margin.left = this.internal.config.margin.right = this.internal.config.margin.top = this.internal.config.margin.bottom = 20;
          }
-         this.internal.config.columns = this.internal.config.columns || {
-             x: '',
-             y: ''
-         };
-         this.internal.config.data = this.internal.config.data || [];
+
+         if (config.columns) {
+             this.internal.config.columns = config.columns;
+         } else {
+             this.internal.config.columns = {
+                 x: '',
+                 y: '',
+                 key: ''
+             };
+         }
+         if (config.data) {
+             this.internal.config.data = config.data;
+         } else {
+             this.internal.config.data = [];
+         }
+
+         if (config.interactions) {
+             this.internal.config.interactions = config.interactions;
+         } else {
+             //to-do set default interactions
+         }
+
          initializeChart.call(this);
 
 
@@ -538,7 +555,7 @@
 
 
          this.internal.quadTreeFactory = d3.geom.quadtree()
-             .extent([[0, 0], [this.internal.size.width, this.internal.size.height]])
+             .extent([[0, 0], [this.internal.config.size.width, this.internal.config.size.height]])
              .x(xMap.bind(this))
              .y(yMap.bind(this));
 
@@ -558,7 +575,7 @@
          // x-axis
          this.internal.chartGroup.append("g")
              .attr("class", "x axis")
-             .attr("transform", "translate(0," + this.internal.size.height + ")")
+             .attr("transform", "translate(0," + this.internal.config.size.height + ")")
              .call(this.internal.xAxis)
              .selectAll("text")
              .style("text-anchor", "end")
@@ -569,8 +586,8 @@
              });
 
          this.internal.xAxisLabel = this.internal.chartGroup.append("text")
-             .attr("y", this.internal.size.height + this.internal.margin.top + this.internal.margin.bottom / 2)
-             .attr("x", this.internal.size.width / 2)
+             .attr("y", this.internal.config.size.height + this.internal.config.margin.top + this.internal.config.margin.bottom / 2)
+             .attr("x", this.internal.config.size.width / 2)
              .attr("dy", "1em")
              .style("text-anchor", "middle")
              .text(columns.x);
@@ -591,8 +608,8 @@
 
          this.internal.yAxisLabel = this.internal.chartGroup.append("text")
              .attr("transform", "rotate(-90)")
-             .attr("y", 0 - this.internal.margin.left)
-             .attr("x", 0 - this.internal.size.height / 2)
+             .attr("y", 0 - this.internal.config.margin.left)
+             .attr("x", 0 - this.internal.config.size.height / 2)
              .attr("dy", "1em")
              .style("text-anchor", "middle")
              .text(columns.y);
@@ -624,14 +641,6 @@
              .attr("cx", xMap.bind(this))
              .attr("cy", yMap.bind(this));
 
-         this.internal.chartGroup.append("circle")
-             .attr("id", this.internal.config.container.id + "pt")
-             .attr("r", 6)
-             .style("fill", "none");
-
-         this.internal.chartGroup.append("g")
-             .attr("class", "brush")
-             .call(this.internal.brush);
      }
 
 
