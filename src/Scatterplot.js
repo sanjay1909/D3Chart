@@ -544,7 +544,7 @@ if (typeof window === 'undefined') {
         if (config.interactions) {
             this.config.interactions = config.interactions;
         } else {
-            //to-do set default interactions
+            this.config.interactions = {}
         }
 
         initializeChart.call(this);
