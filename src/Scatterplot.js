@@ -374,7 +374,21 @@ if (typeof window === 'undefined') {
         // define the xAxis function
         this.internal.xAxis = d3.svg.axis()
             .scale(this.internal.xScale)
-            .orient("bottom");
+            .orient("bottom")
+            .tickFormat(function (i) {
+                // i is the value here for the particular column
+                console.log(i);
+                var label = i;
+                if (chart.internal.xColumnType === 'string') {
+                    var record = chart.config.data[i];
+                    if (record)
+                        label = record[chart.config.columns.x];
+                    else
+                        label = '';
+                }
+
+                return label;
+            });
 
         // define the yScale function
         this.internal.yScale = d3.scale.linear()
@@ -383,7 +397,21 @@ if (typeof window === 'undefined') {
         // define the yAxis function
         this.internal.yAxis = d3.svg.axis()
             .scale(this.internal.yScale)
-            .orient("left");
+            .orient("left")
+            .tickFormat(function (i) {
+                // i is the value here for the particular column
+                console.log(i);
+                var label = i;
+                if (chart.internal.yColumnType === 'string') {
+                    var record = chart.config.data[i];
+                    if (record)
+                        label = record[chart.config.columns.y];
+                    else
+                        label = '';
+                }
+
+                return label;
+            });
 
         // define the d3 selection array with SVG element in it
         this.internal.svg = this.internal.container.append("svg")
@@ -559,20 +587,21 @@ if (typeof window === 'undefined') {
             });
 
 
-        if (this.internal.xColumnType === "string") {
-            updateTickFormat.call(this, this.internal.xAxis, this.config.columns.x);
-        }
+        /* if (this.internal.xColumnType === "string") {
+             updateTickFormat.call(this, this.internal.xAxis, this.config.columns.x);
+         }*/
 
         container.select(".x.axis") // change the x axis
             .duration(750)
-            .call(this.internal.xAxis);
-        /* .selectAll("text") //tick labels are selected
-         .style("text-anchor", "end")
-         .attr("dx", "-.8em")
-         .attr("dy", ".15em")
-         .attr("transform", function (d) {
-             return "rotate(-45)"
-         });*/
+            .call(this.internal.xAxis)
+            .selectAll("text") //tick labels are selected
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", ".15em")
+            .attr("transform", function (d) {
+                return "rotate(-45)"
+            });
+
 
 
 
@@ -619,15 +648,19 @@ if (typeof window === 'undefined') {
                 return d.y2 - d.y1;
             });
 
-        if (this.internal.yColumnType === "string") {
+        /*if (this.internal.yColumnType === "string") {
             updateTickFormat.call(this, this.internal.yAxis, this.config.columns.y);
-        }
+        }*/
 
         container.select(".y.axis") // change the y axis
             .duration(750)
-            .call(this.internal.yAxis);
-
-
+            .call(this.internal.yAxis)
+            .selectAll("text") //tick labels are selected
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("transform", function (d) {
+                return "rotate(-45)"
+            });
 
         this.internal.yAxisLabel.text(yCol);
     }
@@ -641,7 +674,9 @@ if (typeof window === 'undefined') {
 
     function updateTickFormat(axis, column) {
         axis.tickFormat(function (column, i) {
-            tickFormatter.call(this, i, column);
+            var label = tickFormatter.call(this, i, column);
+            console.log(label);
+            return label;
         }.bind(this, column));
     }
 
@@ -668,9 +703,9 @@ if (typeof window === 'undefined') {
         //set number of ticks we want
         //this.internal.xAxis.ticks(data.length);
 
-        if (this.internal.xColumnType === "string") {
-            updateTickFormat.call(this, this.internal.xAxis, this.config.columns.x);
-        }
+        //if (this.internal.xColumnType === "string") {
+        // updateTickFormat.call(this, this.internal.xAxis, this.config.columns.x);
+        //}
         // x-axis
         this.internal.chartGroup.append("g")
             .attr("class", "x axis")
@@ -692,17 +727,21 @@ if (typeof window === 'undefined') {
             .style("text-anchor", "middle")
             .text(columns.x);
 
-        if (this.internal.yColumnType === "string") {
+        //if (this.internal.yColumnType === "string") {
 
-            updateTickFormat.call(this, this.internal.yAxis, this.config.columns.y);
-        }
+        //updateTickFormat.call(this, this.internal.yAxis, this.config.columns.y);
+        // }
 
         // y-axis
         this.internal.chartGroup.append("g")
             .attr("class", "y axis")
             .call(this.internal.yAxis)
             .selectAll("text") //tick labels are selected
-            .style("text-anchor", "end");
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("transform", function (d) {
+                return "rotate(-45)"
+            });
 
         this.internal.yAxisLabel = this.internal.chartGroup.append("text")
             .attr("transform", "rotate(-90)")
