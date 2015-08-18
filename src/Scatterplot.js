@@ -30,7 +30,10 @@ if (typeof window === 'undefined') {
     throttle("resize", "optimizedResize");
 })();
 
-
+//TO-DO 1. seperate axis layer as seperate Object and provide API to control each axis property like lable tick position Units etc....
+// 2. Provide Comment for why certain things has to be in initialize chart and few on render chart
+// 3. Support for color column
+// 4. Support for Size Column
 (function () {
 
     // constructor:
