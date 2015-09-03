@@ -695,6 +695,21 @@ if (typeof window === 'undefined') {
             return;
         }
 
+        if (!columns.x) {
+            console.log('x column not set yet');
+            return;
+        }
+
+        if (!columns.y) {
+            console.log('y column not set yet');
+            return;
+        }
+
+        if (!columns.key) {
+            console.log('key column not set yet: Key column is must for interaction between charts');
+            return;
+        }
+
         var data = this.config.data;
 
         // set the domain value for xScale function based on data min and max value
