@@ -553,9 +553,10 @@ if (typeof window === 'undefined') {
     }
 
     p.setXAttribute = function (xColumn) {
-        this.config.columns.x = xColumn;
-        updateXaxis.call(this);
-
+        if (this.config.columns.x !== xColumn) {
+            this.config.columns.x = xColumn;
+            updateXaxis.call(this);
+        }
     }
 
     function updateXaxis() {
@@ -612,9 +613,10 @@ if (typeof window === 'undefined') {
     }
 
     p.setYAttribute = function (yColumn) {
-        this.config.columns.y = yColumn;
-        updateYaxis.call(this);
-
+        if (this.config.columns.y !== yColumn) {
+            this.config.columns.y = yColumn;
+            updateYaxis.call(this);
+        }
     }
 
 
