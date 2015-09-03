@@ -380,7 +380,6 @@ if (typeof window === 'undefined') {
             .orient("bottom")
             .tickFormat(function (i) {
                 // i is the value here for the particular column
-                console.log(i);
                 var label = i;
                 if (chart.internal.xColumnType === 'string') {
                     var record = chart.config.data[i];
@@ -403,7 +402,6 @@ if (typeof window === 'undefined') {
             .orient("left")
             .tickFormat(function (i) {
                 // i is the value here for the particular column
-                console.log(i);
                 var label = i;
                 if (chart.internal.yColumnType === 'string') {
                     var record = chart.config.data[i];
@@ -680,7 +678,6 @@ if (typeof window === 'undefined') {
     function updateTickFormat(axis, column) {
         axis.tickFormat(function (column, i) {
             var label = tickFormatter.call(this, i, column);
-            console.log(label);
             return label;
         }.bind(this, column));
     }
