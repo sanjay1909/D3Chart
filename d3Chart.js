@@ -380,7 +380,6 @@ if (typeof window === 'undefined') {
             .orient("bottom")
             .tickFormat(function (i) {
                 // i is the value here for the particular column
-                console.log(i);
                 var label = i;
                 if (chart.internal.xColumnType === 'string') {
                     var record = chart.config.data[i];
@@ -403,7 +402,6 @@ if (typeof window === 'undefined') {
             .orient("left")
             .tickFormat(function (i) {
                 // i is the value here for the particular column
-                console.log(i);
                 var label = i;
                 if (chart.internal.yColumnType === 'string') {
                     var record = chart.config.data[i];
@@ -553,9 +551,10 @@ if (typeof window === 'undefined') {
     }
 
     p.setXAttribute = function (xColumn) {
-        this.config.columns.x = xColumn;
-        updateXaxis.call(this);
-
+        if (this.config.columns.x !== xColumn) {
+            this.config.columns.x = xColumn;
+            updateXaxis.call(this);
+        }
     }
 
     function updateXaxis() {
@@ -612,9 +611,10 @@ if (typeof window === 'undefined') {
     }
 
     p.setYAttribute = function (yColumn) {
-        this.config.columns.y = yColumn;
-        updateYaxis.call(this);
-
+        if (this.config.columns.y !== yColumn) {
+            this.config.columns.y = yColumn;
+            updateYaxis.call(this);
+        }
     }
 
 
@@ -678,7 +678,6 @@ if (typeof window === 'undefined') {
     function updateTickFormat(axis, column) {
         axis.tickFormat(function (column, i) {
             var label = tickFormatter.call(this, i, column);
-            console.log(label);
             return label;
         }.bind(this, column));
     }
@@ -686,12 +685,26 @@ if (typeof window === 'undefined') {
 
     p.renderChart = function (records) {
 
-        var columns = this.config.columns;
-
         if (records)
             this.config.data = records;
-        if (!records) {
+        if (!this.config.data) {
             console.log('Data not found');
+            return;
+        }
+
+        var columns = this.config.columns;
+        if (!columns.x) {
+            console.log('x column not set yet');
+            return;
+        }
+
+        if (!columns.y) {
+            console.log('y column not set yet');
+            return;
+        }
+
+        if (!columns.key) {
+            console.log('key column not set yet: Key column is must for interaction between charts');
             return;
         }
 
