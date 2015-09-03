@@ -686,15 +686,14 @@ if (typeof window === 'undefined') {
 
     p.renderChart = function (records) {
 
-        var columns = this.config.columns;
-
         if (records)
             this.config.data = records;
-        if (!records) {
+        if (!this.config.data) {
             console.log('Data not found');
             return;
         }
 
+        var columns = this.config.columns;
         if (!columns.x) {
             console.log('x column not set yet');
             return;
