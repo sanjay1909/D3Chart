@@ -11,6 +11,27 @@
             border: 1px solid black;
             border-radius: 25px;
         }
+
+        .controllers {
+            padding-top: 20px;
+            padding-bottom: 20px;
+            padding-left: 80px;
+        }
+
+        .controllers p {
+            font-family: Times sans-serif;
+            font-size: 14px
+        }
+
+        .controllers ul {
+            font-family: Times sans-serif;
+            font-size: 14px
+        }
+
+        .chart {
+            padding-left: 60px;
+            padding-right: 60px;
+        }
     </style>
 
     <script type="text/javascript" src="../bower_components/d3/d3.js"></script>
@@ -21,18 +42,33 @@
 
 <body>
 
-    <div style="float:left">
+    <div class="controllers">
+        <h2>Scatterplot</h2>
+        <p>Chart created with d3. where user has the flexibility to change the chart parameters on the fly.For Example:</p>
+        <ul>
+            <li>To Change the xAxis - call the API <b>setXAttribute(ColumnName)</b></li>
+            <li>To Probe the Chart - call the API <b>probe(key)</b></li>
+            <li>To Make a Selection - call the API <b>select(keys)</b></li>
+        </ul>
 
-        X-Axis:
-        <select id="xSel" onchange="updateXAxis()"> </select>
+        <br/>
+        <p>Project is under devlopment , will add wiki and documentation soon.....
+            <i>Thanks for looking at this demo.</i></p>
+        <br/>
+        <br/>
+
+        <div style="float:left">
+            X-Axis
+            <select id="xSel" onchange="updateXAxis()"> </select>
+        </div>
+
+        <div>
+            &#160;&#160;&#160;&#160;Y-Axis
+            <select id="ySel" onchange="updateYAxis()"> </select>
+        </div>
     </div>
 
-    <div>
-        Y-Axis:
-        <select id="ySel" onchange="updateYAxis()"> </select>
-    </div>
-    <div id="div1"></div>
-    <div id="div2"></div>
+    <div id="div1" class="chart"></div>
 
 
     <script type="text/javascript">
