@@ -308,56 +308,43 @@ if (typeof window === 'undefined') {
         return nodes;
     }
 
-    /*function resize() {
-        // update width
-        this.internal.size.width = parseInt(d3.select(this.config.container).style('width'), 10);
-        this.internal.size.width = this.internal.size.width - this.internal.margin.left - this.internal.margin.right;
-        // update height
-        this.internal.size.height = parseInt(d3.select(this.config.container).style('height'), 10);
-        this.internal.size.height = this.internal.size.height - this.internal.margin.top - this.internal.margin.bottom;
 
-        // resize the chart
-        this.internal.xScale.range([0, this.internal.size.width]);
-        this.internal.yScale.range([0, this.internal.size.height]);
-
-        d3.select(this.internal.chartGroup.node().parentNode)
-            .style('height', (this.internal.size.width + this.internal.margin.top + this.internal.margin.botom) + 'px')
-            .style('width', (this.internal.size.height + this.internal.margin.left + this.internal.margin.right) + 'px');
-
-
-        // update axes
-        this.internal.chartGroup.select('.x.axis.top').call(this.internal.xAxis.orient('bottom'));
-        this.internal.chartGroup.select('.x.axis.bottom').call(this.internal.xAxis.orient('left'));
-
-    }*/
 
     function responsivefy(svg) {
         // get container
-        var container = d3.select(svg.node().parentNode),
-            width = parseInt(svg.style("width")),
-            height = parseInt(svg.style("height"));
+        // var container = d3.select(svg.node().parentNode);
+        var width = parseInt(svg.style("width"));
+        var height = parseInt(svg.style("height"));
         //aspect = width / height;
+
+
+        var chart = this;
 
         // add viewBox
         // and call resize so that svg resizes on inital page load
         svg.attr("viewBox", "0 0 " + width + " " + height)
             .attr("perserveAspectRatio", "none")
-            .call(resize);
+            .call(resizeFunction.bind(null, chart, svg));
+
+
 
         // to register multiple listeners for same event type,
         // you need to add namespace, i.e., 'click.foo'
         // necessary if you call invoke this function for multiple svgs
         // api docs: https://github.com/mbostock/d3/wiki/Selections#on
-        d3.select(window).on("resize." + container.attr("id"), resize);
+        d3.select(window).on("resize." + this.internal.container.attr('id'), resizeFunction.bind(null, chart, svg));
 
-        // get width of container and resize svg to fit it
-        function resize() {
-            var targetWidth = parseInt(container.style("width"));
-            var targetHeight = parseInt(container.style("height"));
 
-            svg.attr("width", targetWidth);
-            //svg.attr("height", targetHeight);
-        }
+
+    }
+
+    function resizeFunction(chart, svg) {
+        var targetWidth = parseInt(chart.internal.container.style("width"));
+        var targetHeight = parseInt(chart.internal.container.style("height"));
+        console.log('resize: ', targetWidth, targetHeight);
+
+        svg.attr("width", targetWidth);
+        //svg.attr("height", targetHeight);
     }
 
 
@@ -418,7 +405,7 @@ if (typeof window === 'undefined') {
         this.internal.svg = this.internal.container.append("svg")
             .attr("width", this.config.size.width + this.config.margin.left + this.config.margin.right)
             .attr("height", this.config.size.height + this.config.margin.top + this.config.margin.bottom)
-            .call(responsivefy);
+            .call(responsivefy.bind(this));
 
         // define the d3 selction array with Group element, where axis and Points are drawn
         this.internal.chartGroup = this.internal.svg.append("g")
@@ -852,6 +839,16 @@ if (typeof window === 'undefined') {
         this.internal.point.classed("selected", function (d) {
             return d.selected;
         });
+    }
+
+    p.dispose = function () {
+        //d3.select(window).on("resize." + this.internal.container.attr('id'), resizeFunction.bind(null, chart, svg));
+        if (window.detachEvent) {
+            window.detachEvent('onresize', resizeFunction);
+        } else if (window.removeEventListener) {
+            window.removeEventListener('resize', resizeFunction);
+        }
+
     }
 
 
