@@ -675,25 +675,47 @@ if (typeof window === 'undefined') {
 
         if (records)
             this.config.data = records;
+
         if (!this.config.data) {
-            console.log('Data not found');
+            console.error('Data not found');
             return;
         }
+
+
 
         var columns = this.config.columns;
         if (!columns.x) {
-            console.log('x column not set yet');
+            console.error('x column is not set yet');
             return;
+        } else {
+            if (columns.x.constructor !== String) {
+                console.error('x value has to be a Column Name in String format.' + columns.x.constructor.name + ' is not supported');
+                return;
+            }
         }
 
         if (!columns.y) {
-            console.log('y column not set yet');
+            console.error('y column is not set yet');
             return;
+        } else {
+            if (columns.y.constructor !== String) {
+                console.error('y value has to be a Column Name in String format.' + columns.y.constructor.name + ' is not supported');
+                return;
+            }
         }
 
+
+
         if (!columns.key) {
-            console.log('key column not set yet: Key column is must for interaction between charts');
-            return;
+            if (!records[0].hasOwnProperty('index')) {
+                console.warn("Its a good practise to set key column. failing to do so, will create a index as key column");
+                columns.key = 'index';
+                for (var i = 0; i < records.length; i++) {
+                    var rec = records[i];
+                    rec['index'] = i;
+                }
+            }
+
         }
 
         var data = this.config.data;
@@ -705,11 +727,7 @@ if (typeof window === 'undefined') {
         this.internal.quadTree = this.internal.quadTreeFactory(data);
 
         //set number of ticks we want
-        //this.internal.xAxis.ticks(data.length);
 
-        //if (this.internal.xColumnType === "string") {
-        // updateTickFormat.call(this, this.internal.xAxis, this.config.columns.x);
-        //}
         // x-axis
         this.internal.chartGroup.append("g")
             .attr("class", "x axis")
