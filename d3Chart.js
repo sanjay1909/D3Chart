@@ -714,6 +714,8 @@ if (typeof window === 'undefined') {
                     var rec = records[i];
                     rec['index'] = i;
                 }
+            } else {
+                columns.key = 'index';
             }
 
         }
