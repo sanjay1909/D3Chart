@@ -155,7 +155,7 @@
 
         }
 
-        var chart = new d3Chart.Scatterplot(config);
+        var scatterChart = new d3Chart.Scatterplot(config);
 
         createDataSourceOptions();
         d3.csv("cereal.csv", function (error, rows) {
@@ -195,13 +195,13 @@
         function updateXAxis() {
             var xSelect = document.getElementById("xSel");
             console.log(xSelect.value);
-            chart.setXAttribute(xSelect.value);
+            scatterChart.setXAttribute(xSelect.value);
         }
 
         function updateYAxis() {
             var ySelect = document.getElementById("ySel");
             console.log(ySelect.value);
-            chart.setYAttribute(ySelect.value);
+            scatterChart.setYAttribute(ySelect.value);
         }
 
         function updateDataSource() {
@@ -213,7 +213,7 @@
             var ySelect = document.getElementById("ySel");
             xSelect.value = dataObj.columns.x;
             ySelect.value = dataObj.columns.y;
-            chart.renderChart(dataObj);
+            scatterChart.renderChart(dataObj);
         }
 
         //updateDataSource();

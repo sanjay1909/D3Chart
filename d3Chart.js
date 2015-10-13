@@ -288,6 +288,7 @@ if (typeof window === 'undefined') {
      * 8. Define KD tree Factory function to create KDTree Nodes.
      */
     function init() {
+        var chart = this;
 
         // responsivefy is added to updated dynamically based on screen resize
         this.internal.svg = this.internal.container.append("svg")
@@ -380,7 +381,7 @@ if (typeof window === 'undefined') {
      */
     function drawAxis() {
 
-        var data = chart.config.data.records;
+        var data = this.config.data.records;
 
         // set the domain value for xScale function based on data min and max value
         this.internal.xScale.domain([d3.min(this.config.data.records, xValue.bind(this)), d3.max(this.config.data.records, xValue.bind(this))]);
