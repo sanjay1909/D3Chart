@@ -47,6 +47,7 @@
         <p>Chart created with d3. where user has the flexibility to change the chart parameters on the fly.For Example:</p>
         <ul>
             <li>To Change the xAxis - call the API <b>setXAttribute(ColumnName)</b></li>
+            <li>To Change the yAxis - call the API <b>setYAttribute(ColumnName)</b></li>
             <li>To Probe the Chart - call the API <b>probe(key)</b></li>
             <li>To Make a Selection - call the API <b>select(keys)</b></li>
         </ul>
@@ -58,14 +59,19 @@
         <br/>
 
         <div style="float:left">
-            X-Axis
-            <select id="xSel" onchange="updateXAxis()"> </select>
+            DataSource
+            <select id="dataSel" onchange="updateDataSource()"> </select>
         </div>
-
-        <div>
+        <div style="float:left">
             &#160;&#160;&#160;&#160;Y-Axis
             <select id="ySel" onchange="updateYAxis()"> </select>
         </div>
+        <div>
+            &#160;&#160;&#160;&#160;X-Axis
+            <select id="xSel" onchange="updateXAxis()"> </select>
+        </div>
+
+
     </div>
 
     <div id="div1" class="chart"></div>
@@ -80,11 +86,6 @@
                 bottom: 140,
                 left: 80
             },
-
-            columns: {
-                x: "name",
-                y: "protein"
-            },
             interactions: {
                 onProbe: {
                     showToolTip: true
@@ -92,32 +93,103 @@
             }
         }
 
-        var chart = new d3Chart.Scatterplot(config);
+        var dataSourceNames = ['rice-paddy-gigagrams', 'cereal'];
+        var dataMap = {};
+        var colMap = {};
 
+        function createColumnOptions(columnNames) {
+            var xColumnOptions = [];
+            var yColumnOptions = [];
+            for (var i = 0; i < columnNames.length; i++) {
+                var opt = columnNames[i];
+                var el = document.createElement("option");
+                el.textContent = opt;
+                el.value = opt;
 
-        var headerNames;
-        d3.csv("cereal.csv", function (error, rows) {
-            headerNames = d3.keys(rows[0]);
+                xColumnOptions.push(el);
+
+                var el = document.createElement("option");
+                el.textContent = opt;
+                el.value = opt;
+
+                yColumnOptions.push(el);
+
+            }
+            return [xColumnOptions, yColumnOptions];
+        }
+
+        function appendColumnOptions(columnOptions) {
             var xSelect = document.getElementById("xSel");
             var ySelect = document.getElementById("ySel");
 
-            for (var i = 0; i < headerNames.length; i++) {
-                var opt = headerNames[i];
-                var el = document.createElement("option");
-                el.textContent = opt;
-                el.value = opt;
-                xSelect.appendChild(el);
-                var el = document.createElement("option");
-                el.textContent = opt;
-                el.value = opt;
-                ySelect.appendChild(el);
+            while (xSelect.firstChild) {
+                xSelect.removeChild(xSelect.firstChild);
+            }
+            while (ySelect.firstChild) {
+                ySelect.removeChild(ySelect.firstChild);
             }
 
 
-            console.log(headerNames);
-            chart.renderChart(rows);
-            xSelect.value = config.columns.x;
-            ySelect.value = config.columns.y;
+            for (var i = 0; i < columnOptions[0].length; i++) {
+                var el = columnOptions[0][i];
+                xSelect.appendChild(el);
+                //ySelect.appendChild(el);
+            }
+
+            for (var i = 0; i < columnOptions[1].length; i++) {
+                var el = columnOptions[1][i];
+                ySelect.appendChild(el);
+            }
+        }
+
+        function createDataSourceOptions() {
+            var dataSel = document.getElementById("dataSel");
+
+            for (var i = 0; i < dataSourceNames.length; i++) {
+                var opt = dataSourceNames[i];
+                var el = document.createElement("option");
+                el.textContent = opt;
+                el.value = opt;
+                dataSel.appendChild(el);
+            }
+
+        }
+
+        var chart = new d3Chart.Scatterplot(config);
+
+        createDataSourceOptions();
+        d3.csv("cereal.csv", function (error, rows) {
+            var options = createColumnOptions(d3.keys(rows[0]));
+            dataSourceNames.push('cereal');
+            var dataObj = {
+                columns: {
+                    x: "name",
+                    y: "protein"
+                },
+                records: rows
+            };
+
+            dataMap['cereal'] = dataObj;
+            colMap['cereal'] = options;
+
+
+        });
+
+        d3.csv("rice-paddy-gigagrams.csv", function (error, rows) {
+            var options = createColumnOptions(d3.keys(rows[0]));
+            dataSourceNames.push('rice-paddy-gigagrams');
+            var dataObj = {
+                columns: {
+                    x: "AreaName",
+                    y: "Value"
+                },
+                records: rows
+            };
+
+            dataMap['rice-paddy-gigagrams'] = dataObj;
+            colMap['rice-paddy-gigagrams'] = options;
+            updateDataSource();
+
         });
 
         function updateXAxis() {
@@ -131,6 +203,20 @@
             console.log(ySelect.value);
             chart.setYAttribute(ySelect.value);
         }
+
+        function updateDataSource() {
+            var dataSelect = document.getElementById("dataSel");
+            var options = colMap[dataSelect.value];
+            appendColumnOptions(options);
+            var dataObj = dataMap[dataSelect.value];
+            var xSelect = document.getElementById("xSel");
+            var ySelect = document.getElementById("ySel");
+            xSelect.value = dataObj.columns.x;
+            ySelect.value = dataObj.columns.y;
+            chart.renderChart(dataObj);
+        }
+
+        //updateDataSource();
     </script>
 </body>
 

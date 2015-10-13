@@ -44,57 +44,19 @@ if (typeof window === 'undefined') {
      */
     function Scatterplot(config) {
 
-        /**
-         * reference for all d3 created internals
-         * @public
-         * @property internal
-         * @type Object
-         * @default {}
-         */
-        this.internal = {};
+        Object.defineProperty(this, 'internal', {
+            value: {}
+        });
 
-        /**
-         * @public
-         * @property xScale
-         * @type Function
-         * @default undefined
-         */
         this.internal.xScale;
-
-        /**
-         * @public
-         * @property yScale
-         * @type Function
-         * @default undefined
-         */
         this.internal.yScale;
-
-        /**
-         * @public
-         * @property xAxis
-         * @type Function
-         * @default undefined
-         */
         this.internal.xAxis;
-
-        /**
-         * @public
-         * @property yAxis
-         * @type Function
-         * @default undefined
-         */
         this.internal.yAxis;
         this.internal.xAxisLabel;
         this.internal.yAxisLabel;
         this.internal.xColumnType;
         this.internal.yColumnType;
 
-        /**
-         * @public
-         * @property container
-         * @type HTMLdivElement
-         * @default undefined
-         */
         this.internal.container;
         this.internal.svg;
         this.internal.chartGroup; // group inside the SVG
@@ -102,19 +64,12 @@ if (typeof window === 'undefined') {
         this.internal.brush;
         this.internal.kdRect;
 
-        /**
-         * function to generate quatree data
-         * @public
-         * @property quadTreeFactory
-         * @type Function
-         * @default undefined
-         */
         this.internal.quadTreeFactory;
         this.internal.quadTree;
 
         if (config) {
             this.create(config);
-            if (this.config.data.length > 0)
+            if (this.config.data && this.config.data.records.length > 0)
                 this.renderChart(this.config.data);
 
         }
@@ -125,23 +80,18 @@ if (typeof window === 'undefined') {
     // setup x
     // data -> value
     function xValue(d, i) {
-        var xCol = this.config.columns.x;
+        var xCol = this.config.data.columns.x;
         if (typeof (d[xCol]) === "string") {
             if (isNaN(Number(d[xCol]))) {
                 this.internal.xColumnType = "string";
-                if (d.index === undefined) {
-                    d.index = i;
-                    return i;
-                } else {
-                    if (typeof (d.index) === "string")
-                        d.index = Number(d.index);
-                    return d.index;
-                }
+                d.index = d.index === undefined ? i : (typeof (d.index) === "string" ? Number(d.index) : d.index);
+                return d.index;
             } else {
                 this.internal.xColumnType = "number";
                 d[xCol] = Number(d[xCol]);
             }
-
+        } else if (typeof (d[xCol]) === "number") {
+            this.internal.xColumnType = "number";
         }
         return d[xCol];
     }
@@ -153,23 +103,19 @@ if (typeof window === 'undefined') {
 
     // setup y
     // data -> value
-    function yValue(d) {
-        var yCol = this.config.columns.y;
+    function yValue(d, i) {
+        var yCol = this.config.data.columns.y;
         if (typeof (d[yCol]) === "string") {
             if (isNaN(Number(d[yCol]))) {
                 this.internal.yColumnType = "string";
-                if (d.index === undefined) {
-                    d.index = i;
-                    return i;
-                } else {
-                    if (typeof (d.index) === "string")
-                        d.index = Number(d.index);
-                    return d.index;
-                }
+                d.index = d.index === undefined ? i : (typeof (d.index) === "string" ? Number(d.index) : d.index);
+                return d.index;
             } else {
                 this.internal.yColumnType = "number";
                 d[yCol] = Number(d[yCol]);
             }
+        } else if (typeof (d[yCol]) === "number") {
+            this.internal.yColumnType = "number";
         }
         return d[yCol];
     }
@@ -182,19 +128,19 @@ if (typeof window === 'undefined') {
 
     // setup fill color
     function cValue(d) {
-        return d[this.config.columns.color];
+        return d[this.config.data.columns.color];
     }
 
     // Find the nodes within the specified rectangle.
     function search(quadtree, x0, y0, x3, y3) {
         var selectedDataKeys = [];
-        var key = this.config.columns.key;
+        var key = this.config.data.columns.key;
         quadtree.visit(function (node, x1, y1, x2, y2) {
             var p = node.point;
             if (p) {
                 p.scanned = true;
-                var colXVal = this.internal.xScale(xValue.call(this, p), p.index);
-                var colYVal = this.internal.yScale(yValue.call(this, p), p.index);
+                var colXVal = this.internal.xScale(xValue.call(this, p, p.index));
+                var colYVal = this.internal.yScale(yValue.call(this, p, p.index));
                 p.selected = (colXVal >= x0) && (colXVal < x3) && (colYVal >= y0) && (colYVal < y3);
                 if (p.selected)
                     selectedDataKeys.push(p[key]);
@@ -234,8 +180,8 @@ if (typeof window === 'undefined') {
         var p = node.point;
         if (p) {
             p.scanned = true;
-            var dx = this.internal.xScale(xValue.call(this, p), p.index) - x,
-                dy = this.internal.yScale(yValue.call(this, p), p.index) - y,
+            var dx = this.internal.xScale(xValue.call(this, p, p.index)) - x,
+                dy = this.internal.yScale(yValue.call(this, p, p.index)) - y,
                 d = Math.sqrt(dx * dx + dy * dy);
             if (d < best.d) {
                 best.d = d;
@@ -259,7 +205,7 @@ if (typeof window === 'undefined') {
 
     function mousemoveListener() {
         var onProbe = this.config.interactions.onProbe;
-        var key = this.config.columns.key;
+        var key = this.config.data.columns.key;
         var x = +this.internal.probeCircle.attr('cx'),
             y = +this.internal.probeCircle.attr('cy');
 
@@ -354,53 +300,17 @@ if (typeof window === 'undefined') {
      * map function - maps from data value to display value
      * axis - sets up axis
      */
-    function initializeChart() {
-        var chart = this;
+    function init() {
 
         // define the xScale function
         this.internal.xScale = d3.scale.linear()
             .range([0, this.config.size.width]); // value -> display
 
-        // define the xAxis function
-        this.internal.xAxis = d3.svg.axis()
-            .scale(this.internal.xScale)
-            .orient("bottom")
-            .tickFormat(function (i) {
-                // i is the value here for the particular column
-                var label = i;
-                if (chart.internal.xColumnType === 'string') {
-                    var record = chart.config.data[i];
-                    if (record)
-                        label = record[chart.config.columns.x];
-                    else
-                        label = '';
-                }
-
-                return label;
-            });
-
         // define the yScale function
         this.internal.yScale = d3.scale.linear()
             .range([this.config.size.height, 0]); // value -> display
 
-        // define the yAxis function
-        this.internal.yAxis = d3.svg.axis()
-            .scale(this.internal.yScale)
-            .orient("left")
-            .tickFormat(function (i) {
-                // i is the value here for the particular column
-                var label = i;
-                if (chart.internal.yColumnType === 'string') {
-                    var record = chart.config.data[i];
-                    if (record)
-                        label = record[chart.config.columns.y];
-                    else
-                        label = '';
-                }
-
-                return label;
-            });
-
+        // Adds the svg canvas
         // define the d3 selection array with SVG element in it
         this.internal.svg = this.internal.container.append("svg")
             .attr("width", this.config.size.width + this.config.margin.left + this.config.margin.right)
@@ -409,23 +319,14 @@ if (typeof window === 'undefined') {
 
         // define the d3 selction array with Group element, where axis and Points are drawn
         this.internal.chartGroup = this.internal.svg.append("g")
-            .attr("transform", "translate(" + this.config.margin.left + "," + this.config.margin.top + ")")
-            .on("mousemove", function (d) {
-                var xy = d3.mouse(d3.select(this)[0][0]);
-                chart.internal.probeCircle.attr("cx", xy[0]);
-                chart.internal.probeCircle.attr("cy", xy[1]);
-                mousemoveListener.call(chart);
-            });
+            .attr("transform", "translate(" + this.config.margin.left + "," + this.config.margin.top + ")");
 
-        /*kdColor = d3.scale.linear()
-            .domain([0, 8]) // max depth of quadtree
-            .range(["#efe", "#060"]);*/
 
         // Brush for Selection
         this.internal.brush = d3.svg.brush()
             .x(d3.scale.identity().domain([0 - 5, this.config.size.width + 5]))
-            .y(d3.scale.identity().domain([0 - 5, this.config.size.height + 5]))
-            .on("brush", brushListener.bind(chart));
+            .y(d3.scale.identity().domain([0 - 5, this.config.size.height + 5]));
+
 
 
         // define the d3 selction array with Group element, brush rectangle is drawn
@@ -440,13 +341,142 @@ if (typeof window === 'undefined') {
             .attr("r", 6)
             .style("fill", "none");
 
+    }
+
+    function initializeAxis() {
+        var chart = this;
+
+        var data = chart.config.data.records;
+
+        // set the domain value for xScale function based on data min and max value
+        this.internal.xScale.domain([d3.min(data, xValue.bind(this)), d3.max(data, xValue.bind(this))]);
+        this.internal.yScale.domain([d3.min(data, yValue.bind(this)), d3.max(data, yValue.bind(this))]);
+
+        // define the xAxis function
+        this.internal.xAxis = d3.svg.axis()
+            .scale(this.internal.xScale)
+            .orient("bottom")
+            .tickFormat(function (i) {
+                // i is the value here for the particular column
+                var label = i;
+                if (chart.internal.xColumnType === 'string') {
+                    var record = chart.config.data.records[i];
+                    label = record ? record[chart.config.data.columns.x] : '';
+                }
+                return label;
+            });
+
+        // define the yAxis function
+        this.internal.yAxis = d3.svg.axis()
+            .scale(this.internal.yScale)
+            .orient("left")
+            .tickFormat(function (i) {
+                // i is the value here for the particular column
+                var label = i;
+                if (chart.internal.yColumnType === 'string') {
+                    var record = chart.config.data.records[i];
+                    label = record ? record[chart.config.data.columns.y] : '';
+                }
+                return label;
+            });
+
+        // x-axis
+        // Add the X Axis
+        this.internal.chartGroup.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + this.config.size.height + ")")
+            .call(this.internal.xAxis) // this will call xAxis Function with current 'g' element and creates ticks and and its labels
+            .selectAll("text") //tick labels are selected
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", ".15em")
+            .attr("transform", function (d) {
+                return "rotate(-45)"
+            });
+
+        // Add the X Axis Name as Text
+        this.internal.xAxisLabel = this.internal.chartGroup.append("text")
+            .attr("y", this.config.size.height + this.config.margin.top + this.config.margin.bottom / 2)
+            .attr("x", this.config.size.width / 2)
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text(chart.config.data.columns.x);
+
+
+        // y-axis
+        // Add the Y Axis
+        this.internal.chartGroup.append("g")
+            .attr("class", "y axis")
+            .call(this.internal.yAxis)
+            .selectAll("text") //tick labels are selected
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("transform", function (d) {
+                return "rotate(-45)"
+            });
+
+        // Add the Y Axis Name as Text
+        this.internal.yAxisLabel = this.internal.chartGroup.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 0 - this.config.margin.left)
+            .attr("x", 0 - this.config.size.height / 2)
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text(chart.config.data.columns.y);
+
+    }
+
+    function initializeKDTree() {
         // defines a function to generate quadtree
         this.internal.quadTreeFactory = d3.geom.quadtree()
             .extent([[0, 0], [this.config.size.width, this.config.size.height]])
             .x(xMap.bind(this))
             .y(yMap.bind(this));
+    }
 
+    function initializeListener() {
+        var chart = this;
+        this.internal.chartGroup.on("mousemove", function (d) {
+            var xy = d3.mouse(d3.select(this)[0][0]);
+            chart.internal.probeCircle.attr("cx", xy[0]);
+            chart.internal.probeCircle.attr("cy", xy[1]);
+            mousemoveListener.call(chart);
+        });
 
+        this.internal.brush.on("brush", brushListener.bind(chart));
+    }
+
+    function initializeChart() {
+        var chart = this;
+        var data = chart.config.data.records;
+        this.internal.quadTree = this.internal.quadTreeFactory(data);
+
+        // draw KD-Nodes
+        this.internal.kdRect = this.internal.chartGroup.selectAll(".node")
+            .data(createNodes(this.internal.quadTree))
+            .enter().append("rect")
+            .attr("class", "node")
+            .attr("x", function (d) {
+                return d.x1;
+            })
+            .attr("y", function (d) {
+                return d.y1;
+            })
+            .attr("width", function (d) {
+                return d.x2 - d.x1;
+            })
+            .attr("height", function (d) {
+                return d.y2 - d.y1;
+            });
+
+        // draw dots
+        this.internal.point = this.internal.chartGroup.selectAll(".point")
+            .data(chart.config.data.records)
+            .enter().append("circle")
+            .attr("class", "point")
+            .attr("r", 6)
+            .attr("cx", xMap.bind(this))
+            .attr("cy", yMap.bind(this));
     }
 
     var p = Scatterplot.prototype;
@@ -512,20 +542,7 @@ if (typeof window === 'undefined') {
             this.config.margin.left = this.config.margin.right = this.config.margin.top = this.config.margin.bottom = 20;
         }
 
-        if (config.columns) {
-            this.config.columns = config.columns;
-        } else {
-            this.config.columns = {
-                x: '',
-                y: '',
-                key: ''
-            };
-        }
-        if (config.data) {
-            this.config.data = config.data;
-        } else {
-            this.config.data = [];
-        }
+
 
         if (config.interactions) {
             this.config.interactions = config.interactions;
@@ -533,36 +550,31 @@ if (typeof window === 'undefined') {
             this.config.interactions = {}
         }
 
-        initializeChart.call(this);
-
-
+        init.call(this);
     }
 
     p.setXAttribute = function (xColumn) {
-        if (this.config.columns.x !== xColumn) {
-            this.config.columns.x = xColumn;
+        if (this.config.data.columns.x !== xColumn) {
+            this.config.data.columns.x = xColumn;
             updateXaxis.call(this);
         }
     }
 
     function updateXaxis() {
-        var data = this.config.data;
-        var xCol = this.config.columns.x;
+        var data = this.config.data.records;
+        var xCol = this.config.data.columns.x;
 
-        this.internal.xScale.domain([d3.min(data, xValue.bind(this)), d3.max(data, xValue.bind(this))]);
+        this.internal.xScale.domain([d3.min(chart.config.data.records, xValue.bind(this)), d3.max(data, xValue.bind(this))]);
 
         this.internal.quadTreeFactory.x(xMap.bind(this));
-        this.internal.quadTree = this.internal.quadTreeFactory(data);
+        this.internal.quadTree = this.internal.quadTreeFactory(chart.config.data.records);
         this.internal.kdRect.data(createNodes(this.internal.quadTree));
 
-        var container = d3.select(this.config.container.element).transition();
-
-        container.selectAll(".point")
-            .duration(750)
-            .attr("cx", xMap.bind(this));
+        var container = d3.select(this.config.container.element);
 
         container.selectAll(".node")
-            .duration(750)
+            .transition()
+            .duration(350)
             .attr("x", function (d) {
                 return d.x1;
             })
@@ -576,13 +588,15 @@ if (typeof window === 'undefined') {
                 return d.y2 - d.y1;
             });
 
+        container.selectAll(".point")
+            .transition()
+            .duration(350)
+            .attr("cx", xMap.bind(this));
 
-        /* if (this.internal.xColumnType === "string") {
-             updateTickFormat.call(this, this.internal.xAxis, this.config.columns.x);
-         }*/
 
         container.select(".x.axis") // change the x axis
-            .duration(750)
+            .transition()
+            .duration(350)
             .call(this.internal.xAxis)
             .selectAll("text") //tick labels are selected
             .style("text-anchor", "end")
@@ -591,16 +605,12 @@ if (typeof window === 'undefined') {
             .attr("transform", function (d) {
                 return "rotate(-45)"
             });
-
-
-
-
         this.internal.xAxisLabel.text(xCol);
     }
 
     p.setYAttribute = function (yColumn) {
-        if (this.config.columns.y !== yColumn) {
-            this.config.columns.y = yColumn;
+        if (this.config.data.columns.y !== yColumn) {
+            this.config.data.columns.y = yColumn;
             updateYaxis.call(this);
         }
     }
@@ -609,23 +619,26 @@ if (typeof window === 'undefined') {
 
     function updateYaxis() {
 
-        var data = this.config.data;
-        var yCol = this.config.columns.y;
+        var chart = this;
+        var data = this.config.data.records;
+        var yCol = this.config.data.columns.y;
 
-        this.internal.yScale.domain([d3.min(data, yValue.bind(this)), d3.max(data, yValue.bind(this))]);
+        this.internal.yScale.domain([d3.min(chart.config.data.records, yValue.bind(this)), d3.max(chart.config.data.records, yValue.bind(this))]);
 
         this.internal.quadTreeFactory.y(yMap.bind(this));
-        this.internal.quadTree = this.internal.quadTreeFactory(data);
+        this.internal.quadTree = this.internal.quadTreeFactory(chart.config.data.records);
         this.internal.kdRect.data(createNodes(this.internal.quadTree));
 
-        var container = d3.select(this.config.container.element).transition();
+        var container = d3.select(this.config.container.element);
 
         container.selectAll(".point")
-            .duration(750)
+            .transition()
+            .duration(350)
             .attr("cy", yMap.bind(this));
 
         container.selectAll(".node")
-            .duration(750)
+            .transition()
+            .duration(350)
             .attr("x", function (d) {
                 return d.x1;
             })
@@ -639,12 +652,9 @@ if (typeof window === 'undefined') {
                 return d.y2 - d.y1;
             });
 
-        /*if (this.internal.yColumnType === "string") {
-            updateTickFormat.call(this, this.internal.yAxis, this.config.columns.y);
-        }*/
-
         container.select(".y.axis") // change the y axis
-            .duration(750)
+            .transition()
+            .duration(350)
             .call(this.internal.yAxis)
             .selectAll("text") //tick labels are selected
             .style("text-anchor", "end")
@@ -656,34 +666,33 @@ if (typeof window === 'undefined') {
         this.internal.yAxisLabel.text(yCol);
     }
 
-    function tickFormatter(index, colName) {
-        var labels = this.config.data.map(function (d, i) {
-            return d[colName];
-        }.bind(this));
-        return labels[index];
-    }
 
-    function updateTickFormat(axis, column) {
-        axis.tickFormat(function (column, i) {
-            var label = tickFormatter.call(this, i, column);
-            return label;
-        }.bind(this, column));
-    }
+    p.renderChart = function (renderProperties) {
 
+        if (this.config.data) {
+            this.config.data = renderProperties;
+            redraw.call(this);
+            return;
+        }
+        if (renderProperties)
+            this.config.data = renderProperties;
 
-    p.renderChart = function (records) {
-
-        if (records)
-            this.config.data = records;
-
-        if (!this.config.data) {
+        if (!this.config.data.records) {
             console.error('Data not found');
             return;
         }
 
+        if (renderProperties.columns) {
+            this.config.data.columns = renderProperties.columns;
+        } else {
+            this.config.data.columns = {
+                x: '',
+                y: '',
+                key: ''
+            };
+        }
 
-
-        var columns = this.config.columns;
+        var columns = this.config.data.columns;
         if (!columns.x) {
             console.error('x column is not set yet');
             return;
@@ -704,14 +713,14 @@ if (typeof window === 'undefined') {
             }
         }
 
-
+        var data = this.config.data.records;
 
         if (!columns.key) {
-            if (!records[0].hasOwnProperty('index')) {
+            if (!data[0].hasOwnProperty('index')) {
                 console.warn("Its a good practise to set key column. failing to do so, will create a index as key column");
                 columns.key = 'index';
-                for (var i = 0; i < records.length; i++) {
-                    var rec = records[i];
+                for (var i = 0; i < data.length; i++) {
+                    var rec = data[i];
                     rec['index'] = i;
                 }
             } else {
@@ -720,66 +729,34 @@ if (typeof window === 'undefined') {
 
         }
 
-        var data = this.config.data;
 
+
+        initializeAxis.call(this);
+
+        initializeKDTree.call(this);
+        initializeChart.call(this);
+        initializeListener.call(this);
+
+    }
+
+    function redraw() {
+        var data = this.config.data.records;
+        var xCol = this.config.data.columns.x;
+        var yCol = this.config.data.columns.y;
         // set the domain value for xScale function based on data min and max value
         this.internal.xScale.domain([d3.min(data, xValue.bind(this)), d3.max(data, xValue.bind(this))]);
         this.internal.yScale.domain([d3.min(data, yValue.bind(this)), d3.max(data, yValue.bind(this))]);
 
+        this.internal.quadTreeFactory.x(xMap.bind(this));
+        this.internal.quadTreeFactory.y(yMap.bind(this));
         this.internal.quadTree = this.internal.quadTreeFactory(data);
+        this.internal.kdRect.data(createNodes(this.internal.quadTree));
 
-        //set number of ticks we want
+        var container = d3.select(this.config.container.element);
 
-        // x-axis
-        this.internal.chartGroup.append("g")
-            .attr("class", "x axis")
-            .attr("transform", "translate(0," + this.config.size.height + ")")
-            .call(this.internal.xAxis) // this will call xAxis Function with current 'g' element and creates ticks and and its labels
-            .selectAll("text") //tick labels are selected
-            .style("text-anchor", "end")
-            .attr("dx", "-.8em")
-            .attr("dy", ".15em")
-            .attr("transform", function (d) {
-                return "rotate(-45)"
-            });
-
-        // x-axis column name tex text is defined
-        this.internal.xAxisLabel = this.internal.chartGroup.append("text")
-            .attr("y", this.config.size.height + this.config.margin.top + this.config.margin.bottom / 2)
-            .attr("x", this.config.size.width / 2)
-            .attr("dy", "1em")
-            .style("text-anchor", "middle")
-            .text(columns.x);
-
-        //if (this.internal.yColumnType === "string") {
-
-        //updateTickFormat.call(this, this.internal.yAxis, this.config.columns.y);
-        // }
-
-        // y-axis
-        this.internal.chartGroup.append("g")
-            .attr("class", "y axis")
-            .call(this.internal.yAxis)
-            .selectAll("text") //tick labels are selected
-            .style("text-anchor", "end")
-            .attr("dx", "-.8em")
-            .attr("transform", function (d) {
-                return "rotate(-45)"
-            });
-
-        this.internal.yAxisLabel = this.internal.chartGroup.append("text")
-            .attr("transform", "rotate(-90)")
-            .attr("y", 0 - this.config.margin.left)
-            .attr("x", 0 - this.config.size.height / 2)
-            .attr("dy", "1em")
-            .style("text-anchor", "middle")
-            .text(columns.y);
-
-
-        this.internal.kdRect = this.internal.chartGroup.selectAll(".node")
-            .data(createNodes(this.internal.quadTree))
-            .enter().append("rect")
-            .attr("class", "node")
+        container.selectAll(".node")
+            .transition()
+            .duration(350)
             .attr("x", function (d) {
                 return d.x1;
             })
@@ -793,14 +770,41 @@ if (typeof window === 'undefined') {
                 return d.y2 - d.y1;
             });
 
-        // draw dots
-        this.internal.point = this.internal.chartGroup.selectAll(".point")
-            .data(data)
-            .enter().append("circle")
-            .attr("class", "point")
-            .attr("r", 6)
+        container.selectAll(".point")
+            .data(chart.config.data.records)
+            .transition()
+            .duration(350)
             .attr("cx", xMap.bind(this))
             .attr("cy", yMap.bind(this));
+
+        container.selectAll(".point").exit().remove();
+
+
+        container.select(".x.axis") // change the x axis
+            .transition()
+            .duration(350)
+            .call(this.internal.xAxis)
+            .selectAll("text") //tick labels are selected
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", ".15em")
+            .attr("transform", function (d) {
+                return "rotate(-45)"
+            });
+
+        this.internal.xAxisLabel.text(xCol);
+        container.select(".y.axis") // change the y axis
+            .transition()
+            .duration(350)
+            .call(this.internal.yAxis)
+            .selectAll("text") //tick labels are selected
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("transform", function (d) {
+                return "rotate(-45)"
+            });
+
+        this.internal.yAxisLabel.text(yCol);
 
     }
 
@@ -808,8 +812,8 @@ if (typeof window === 'undefined') {
     // key required for API call
     // Internal calls doesnt require
     p.probe = function (key) {
-        var data = this.config.data;
-        var keyCol = this.config.columns.key;
+        var data = this.config.data.records;
+        var keyCol = this.config.data.columns.key;
         if (key) {
             this.internal.point.each(function (d) {
                 d.scanned = d.selected = false;
@@ -833,7 +837,7 @@ if (typeof window === 'undefined') {
     // keys required for API call
     // Internal calls doesnt require
     p.select = function (keys) {
-        var data = this.config.data;
+        var data = this.config.data.records;
 
         if (keys) {
             this.internal.point.each(function (d) {
@@ -841,7 +845,7 @@ if (typeof window === 'undefined') {
             });
             data.filter(function (d) {
                 for (var i = 0; i < keys.length; i++) {
-                    if (d[this.config.columns.key] === keys[i])
+                    if (d[this.config.data.columns.key] === keys[i])
                         d.selected = true;
                 }
             }.bind(this))
@@ -861,14 +865,15 @@ if (typeof window === 'undefined') {
         });
     }
 
-    p.dispose = function () {
-        //d3.select(window).on("resize." + this.internal.container.attr('id'), resizeFunction.bind(null, chart, svg));
-        if (window.detachEvent) {
-            window.detachEvent('onresize', resizeFunction);
-        } else if (window.removeEventListener) {
-            window.removeEventListener('resize', resizeFunction);
-        }
+    function removeListener() {
+        var chart = this;
+        this.internal.chartGroup.on("mousemove", null);
+        this.internal.brush.on("brush", null);
+        d3.select(window).on("resize." + this.internal.container.attr('id'), null);
+    }
 
+    p.dispose = function () {
+        removeListener();
     }
 
 
