@@ -318,11 +318,13 @@ if (typeof window === 'undefined') {
 
         // define the xScale function
         this.internal.xScale = d3.scale.linear()
-            .range([0, this.config.size.width]); // value -> display
+            .range([0, this.config.size.width])
+            .nice(); // value -> display
 
         // define the yScale function
         this.internal.yScale = d3.scale.linear()
-            .range([this.config.size.height, 0]); // value -> display
+            .range([this.config.size.height, 0])
+            .nice(); // value -> display
 
         // define the xAxis function
         this.internal.xAxis = d3.svg.axis()
