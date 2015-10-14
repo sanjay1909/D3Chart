@@ -88,7 +88,15 @@
             },
             interactions: {
                 onProbe: {
-                    showToolTip: true
+                    showToolTip: true,
+                    callback: function (key) {
+                        console.log('probe', key)
+                    }
+                },
+                onSelect: {
+                    callback: function (keys) {
+                        console.log('Selection', keys)
+                    }
                 }
             }
         }
