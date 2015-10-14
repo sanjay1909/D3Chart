@@ -559,6 +559,49 @@ if (typeof window === 'undefined') {
 
     p.renderChart = function (renderProperties) {
 
+        if (!renderProperties.records) {
+            console.error('Data not found');
+            return;
+        }
+
+        var columns = renderProperties.columns;
+        if (!columns.x) {
+            console.error('x column is not set yet');
+            return;
+        } else {
+            if (columns.x.constructor !== String) {
+                console.error('x value has to be a Column Name in String format.' + columns.x.constructor.name + ' is not supported');
+                return;
+            }
+        }
+
+        if (!columns.y) {
+            console.error('y column is not set yet');
+            return;
+        } else {
+            if (columns.y.constructor !== String) {
+                console.error('y value has to be a Column Name in String format.' + columns.y.constructor.name + ' is not supported');
+                return;
+            }
+        }
+
+        var data = renderProperties.records;
+
+        if (!columns.key) {
+            if (!data[0].hasOwnProperty('index')) {
+                console.warn("Its a good practise to set key column. failing to do so, will create a index as key column");
+                columns.key = 'index';
+                for (var i = 0; i < data.length; i++) {
+                    var rec = data[i];
+                    rec['index'] = i;
+                }
+            } else {
+                columns.key = 'index';
+            }
+
+        }
+
+
         if (this.config.data) {
             this.config.data = renderProperties;
             redraw.call(this);
